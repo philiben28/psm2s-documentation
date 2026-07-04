@@ -1,0 +1,15 @@
+# PSM2S — .gitignore du dépôt Documentation (backup indépendant du code)
+
+# Secret en clair — ne doit JAMAIS être versionné, même dans un dépôt privé.
+# Cf. IA_RULES / PROC-001 / PROC-002 : les secrets vivent en variable
+# d'environnement (cPanel Passenger), jamais dans un fichier committé.
+07_ Ressources/la derniere clé secret_key.txt
+
+# Fichiers verrous Word (créés à l'ouverture d'un .docx)
+~$*.docx
+~$*.doc
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+desktop.ini

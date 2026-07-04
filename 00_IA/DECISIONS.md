@@ -1,0 +1,165 @@
+# PSM2S - DECISIONS
+
+Registre des décisions du Directeur Technique / Product Owner.
+
+Référencé par START_HERE.md. Ce fichier ne contient que des décisions
+**actées** (validées en revue), pas des pistes ou des idées à l'étude.
+Il se complète au fil des lots ; il ne remplace pas les comptes-rendus
+détaillés de chaque lot (`Documentation/Audits/`, `Documentation/Developpements/`),
+qui restent la source de référence pour le détail technique.
+
+---
+
+## Phase 1 — Sécurité applicative
+
+- **IDOR (C4-1 → C4-7)** : primitive unique de périmètre par établissement
+  (`verifier_acces_etablissement`, `_get_etab_ids_autorises`), réutilisée
+  partout (54 vues), y compris pour C3 (médias) en Phase 2.
+- **F9 (FORM-PERIMETRE)** : filtrage des formulaires contre l'over-posting.
+- **E5** : visibilité de la liste DUERP alignée sur `peut_tout_voir`.
+- **ACC-ZONE** (ouverte, sévérité faible) : `?zone=<pk>` dans
+  `accessibilite_action_ajouter` sans vérification de cohérence métier.
+  Documentée, non corrigée dans C4-6, à traiter dans un lot d'affinage dédié.
+
+## Phase 2 — Sécurité de production
+
+- **Architecture de Production v1** (validée DT, 02/07/2026) — référence
+  permanente (`Audits/2026-07-02_Phase2_Architecture_Production.md`) :
+  - Variables d'environnement : Passenger/cPanel o2switch en production
+    (pas de `.env` en prod).
+  - Settings : **Option A** — un seul `settings.py` piloté par l'environnement
+    (pas de split base/dev/prod).
+  - Statique : Apache + `collectstatic` (pas de WhiteNoise).
+  - Médias : approche progressive — vue Django sécurisée d'abord (C3-1),
+    `X-Sendfile` en Étape 2 ultérieure.
+  - Formation (`formation.…`) : `DEBUG=False` aussi, aucune exception.
+  - Base de données : reste SQLite pour l'instant (sujet non sécuritaire,
+    traité plus tard en E6).
+- **Sécurité de déploiement pilotée par variables dédiées** (principe ajouté
+  en E4) : jamais dérivée de `DEBUG` (la suite de tests tourne en
+  `DEBUG=False` ; dériver `SECURE_SSL_REDIRECT` de `not DEBUG` provoquerait
+  des redirections 301 en test).
+- **`SECRET_KEY` sans fallback** (C2) : absence = échec explicite au
+  démarrage plutôt que clé faible silencieuse.
+- **Signature personnelle = propriétaire strict** (C3-2) : aucune exception,
+  même administrateur. Signatures DUERP/Accessibilité = périmètre établissement.
+- **HSTS progressif, `preload` refusé** (E4) : montée `300 → 86400 → 31536000` ;
+  `includeSubDomains` différé jusqu'à validation HTTPS des deux domaines ;
+  `preload` non activé (engagement durable non souhaité pour l'instant).
+
+## Phase 3 — Calendrier Réglementaire (priorité 1 du backlog)
+
+- **Lot 1 (vue Mois)** validé PO le 02/07/2026 :
+  - **Rendu 100 % serveur** (option A) : grille construite en Python
+    (module standard `calendar`), aucune dépendance JavaScript.
+  - **Seuils de couleur** paramétrables en tête de bloc : vert > 30 jours,
+    orange entre 30 et 7 jours, rouge < 7 jours ou dépassé
+    (`SEUIL_ORANGE_JOURS`, `SEUIL_ROUGE_JOURS`).
+  - **Périmètre** : contrôles réglementaires uniquement (`ControleEtablissement`).
+    Statuts `pas_obligation` et `non_concerne` exclus. Autres sources
+    d'échéances (contrats, prescriptions, tickets) hors périmètre du Lot 1,
+    à introduire une source à la fois dans des lots ultérieurs.
+  - **Accès fiche contrôle** : réservé aux gestionnaires (admin/responsable/
+    directeur) ; un factotum cliquant sur un événement est redirigé vers le
+    dashboard (comportement existant, non modifié par le calendrier).
+- **Lot 2 (vues Semaine et Jour)** développé le 03/07/2026, périmètre validé
+  DT le 03/07/2026 :
+  - Même vue `calendrier()`, granularité pilotée par le paramètre `vue=`
+    (`mois`\|`semaine`\|`jour`), pas de nouvelle route.
+  - Templates séparés par vue, avec légende / bandeau des retards / onglets
+    factorisés en partials communs (décision d'implémentation, autonomie
+    Lead Developer).
+  - Semaine et Jour traités comme un seul lot fonctionnel (même patron de
+    code que le Lot 1), périmètre limité à l'affichage : filtres et
+    sources secondaires d'échéances restent hors lot.
+
+## Lot 3 — Industrialisation (ouvert le 03/07/2026)
+
+- **Sous-lots** : L3.1 Resynchronisation formation (clos 04/07/2026), L3.2
+  PROC-001 (clos 04/07/2026), L3.1a Durcissement HTTPS formation (reporté),
+  L3.3 PROC-002, L3.4 Architecture Core + Variantes, L3.5 Versioning
+  (non ouverts). Un seul sous-lot actif à la fois.
+- **Fichiers spécifiques au serveur jamais versionnés** (décidé suite aux
+  incidents L3.1) : `.htaccess` (bloc Passenger CloudLinux),
+  `passenger_wsgi.py` (contenu propre à chaque environnement, même nom de
+  fichier sur le serveur bien que le dépôt porte des noms distincts),
+  `config/settings_formation.py`. Règle formalisée dans
+  `DEPLOIEMENT_o2switch.md` §3 sexies et `PROC-001`.
+- **Déploiement par transfert complet, jamais par diff Git ciblé**, tant
+  qu'une plateforme n'est pas suivie par Git (son état réel peut diverger
+  de tout commit de référence). Recommandation de fond : faire passer
+  chaque plateforme sous `Git Version Control` cPanel.
+- **PROC-001** (`Documentation/PROC-001_Deploiement_Plateforme_PSM2S.md`)
+  est le document permanent de référence pour tout déploiement (nouveau
+  serveur ou mise à jour), construit à partir de l'expérience réelle de
+  L3.1 plutôt que d'une procédure théorique.
+- **L3.1 officiellement clos, L3.1a reporté** (04/07/2026) : l'activation
+  `DJANGO_SSL`/HSTS sur formation n'est pas ouverte immédiatement ; L3.3
+  (PROC-002) priorisé avant, décision stratégique DT liée à la trajectoire
+  multi-clients de PSM2S.
+- **PROC-002** (`Documentation/PROC-002_Maintenance_Instance_Client_PSM2S.md`,
+  L3.3, clos 04/07/2026) : procédure de correctif ciblé sur une instance
+  déjà déployée (identifier → vérifier l'état réel → corriger en local,
+  périmètre strict → tester → déployer le correctif ciblé, en s'appuyant
+  sur PROC-001 pour le mécanisme sans le dupliquer → vérifier → tracer).
+  **Périmètre actuel volontairement limité** : PSM2S n'a pas encore
+  d'architecture Core + Variantes (L3.4, non ouvert), donc « instance » =
+  un environnement déployé dans son ensemble (formation, production) et
+  non une variante cliente distincte. PROC-002 devra être révisée après
+  L3.4.
+- **Git = source unique de vérité (principe d'architecture)** (PROC-002,
+  04/07/2026) : aucune modification de code n'est considérée comme
+  terminée tant qu'elle n'est pas commitée dans le dépôt Git, sans
+  exception — développement local, correctif de production, correctif de
+  formation, future maintenance d'une variante cliente. S'applique même
+  quand l'environnement corrigé n'est pas lui-même suivi par Git.
+- **L3.1, L3.2, L3.3 clos** (04/07/2026) — socle d'exploitation de PSM2S
+  (formation resynchronisée, déploiement reproductible, maintenance
+  traçable). Prochain tournant identifié : **L3.4 — Architecture Core +
+  Variantes**, décision d'architecture structurante (pas une procédure)
+  conditionnant la gestion de plusieurs clients ; à concevoir avec soin.
+- **L3.4.1 — Cartographie Core/Paramètre/Variante** (validée DT,
+  04/07/2026) : cœur métier réglementaire = Core légitime (générique à
+  tout ERP français). Identité/branding (nom, domaine, email, logo,
+  couleurs) = aujourd'hui codés en dur, candidats à devenir Paramètre.
+  Aucune fonctionnalité activable par instance aujourd'hui (gap identifié).
+  Aucune variante de code identifiée à ce jour.
+- **L3.4.2 — Niveaux de personnalisation** (validé DT, 04/07/2026) :
+  hiérarchie Configuration (identité/branding) → Fonctionnalités
+  activables (Eau, Commissions, DUERP, Accessibilité, Tickets/Interventions)
+  → Personnalisations métier (aucun cas réel aujourd'hui, à ne pas
+  concevoir par anticipation).
+- **L3.4.3 — Politique d'évolution Core/Variante** (validée DT,
+  04/07/2026), élevée au rang de document permanent : `POLITIQUE-001`
+  (`Documentation/POLITIQUE-001_Evolution_Core_Variante_PSM2S.md`).
+  Séquence de décision à appliquer à toute demande : Paramètre → Module
+  commun → Généralisation au Core → Personnalisation métier en dernier
+  recours. Étape 4 (personnalisation métier) exige une validation DT
+  systématique, sans exception ; toute demande arrivée en étape 3 ou 4 est
+  tracée dans ce fichier.
+- **L3.4.4 — Architecture technique Core/Variantes** (validée DT,
+  04/07/2026) : **mono-tenant par instance** (un client = un déploiement,
+  une base dédiée), aucune base partagée entre clients. Niveau 1
+  (Configuration) : extension du mécanisme `config/env.py` existant +
+  context processor pour l'identité/branding. Niveau 2 (Modules
+  activables) : variable `DJANGO_MODULES_ACTIFS` + double garde (menu et
+  accès vue), même logique de défense en profondeur que l'IDOR de Phase 1.
+  Niveau 3 : aucun mécanisme construit, décision assumée (rare par
+  construction). Déploiement d'une nouvelle instance client = `PROC-001`
+  appliqué à un nouveau serveur, aucune nouvelle procédure.
+- **L3.4 clos** (04/07/2026) — premier document d'architecture durable de
+  PSM2S : fixe les règles d'évolution futures, pas seulement l'état actuel.
+  Documents produits : L3.4.1 à L3.4.4 (`Documentation/Developpements/`)
+  et `POLITIQUE-001` (référence permanente).
+- **L3.4 Phase 4 (Développement) commitée et poussée** (04/07/2026,
+  commit `a261a88`) : 137/137 tests verts, aucune régression. Niveau 1
+  (Configuration) et Niveau 2 (Eau, Commissions, DUERP, Accessibilité)
+  opérationnels. Tickets/Interventions volontairement non câblé (couplage
+  croisé avec les autres modules, cf. compte-rendu Phase 4) — mécanisme
+  déjà prêt à l'accueillir en lot séparé.
+
+---
+
+*Fichier vivant : ajouter une entrée par décision structurante validée en
+revue, sous la phase correspondante. Ne pas y consigner de décision non
+actée.*

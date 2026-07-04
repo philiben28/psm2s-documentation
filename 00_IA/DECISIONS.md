@@ -171,6 +171,20 @@ qui restent la source de référence pour le détail technique.
   `DEPLOIEMENT_o2switch.md`) mis à jour ; les comptes-rendus datés
   (archives) volontairement non retouchés.
 
+## Phase 4 — Enrichissement fonctionnel (ouverte le 04/07/2026)
+
+- **Lot 1 — Tableau de bord Directeur enrichi** (validé DT, développé et
+  clos le 04/07/2026, commit `873da0c`) : score de conformité, 5 actions
+  prioritaires, échéances proches (retard/aujourd'hui/semaine), indicateurs
+  clés (contrôles en retard, prescriptions ouvertes, tickets critiques,
+  contrats à échéance) ajoutés à `dashboard()`, réservés au rôle Directeur.
+  **Aucune nouvelle logique métier** : moteur `registre/tableau_bord.py`
+  (`collecter_conformite`) extrait de `tableau_de_bord()` et partagé par
+  les deux vues — règle explicitement fixée par le DT pour ce lot.
+  Question ouverte, non tranchée : un seul moteur de tableau de bord avec
+  widgets par profil, vs deux pages distinctes — le partage du moteur
+  garde cette option disponible sans l'imposer. 148/148 tests verts.
+
 ---
 
 *Fichier vivant : ajouter une entrée par décision structurante validée en

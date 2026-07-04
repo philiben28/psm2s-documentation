@@ -47,6 +47,7 @@ Cycle de vie d'une entrée : `identifiée → décidée en revue → inscrite (O
 | F9 | FORM-PERIMETRE — filtrage des formulaires (over-posting) | fait |
 | M11 | Double `@classmethod` sur `peut_signer` (compat Python) | fait |
 | E5 | Visibilité liste DUERP (`peut_tout_voir` / `duerp_liste`) | fait |
+| IDOR-PDF | IDOR `registre_pdf` — oublié du sweep C4-1→C4-7, identifié et corrigé le 04/07/2026 (hors Phase 1) | fait |
 
 ---
 

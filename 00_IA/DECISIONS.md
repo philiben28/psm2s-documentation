@@ -20,6 +20,18 @@ qui restent la source de référence pour le détail technique.
 - **ACC-ZONE** (ouverte, sévérité faible) : `?zone=<pk>` dans
   `accessibilite_action_ajouter` sans vérification de cohérence métier.
   Documentée, non corrigée dans C4-6, à traiter dans un lot d'affinage dédié.
+- **Correctif post-Phase 1 — IDOR `registre_pdf`** (identifié et corrigé le
+  04/07/2026, hors sweep C4-1→C4-7) : la vue utilisait encore
+  `get_object_or_404(Etablissement, pk=pk)` sans vérification de périmètre —
+  tout utilisateur connecté pouvait télécharger le PDF de registre de
+  n'importe quel établissement. Découvert lors d'une revue de code ciblée
+  (analyse P4-L2), pas d'un audit programmé. Corrigé par remplacement par
+  `get_etablissement_ou_404(request.user, pk)`, identique au motif utilisé
+  partout ailleurs dans le module Établissement ; 5 tests dédiés ajoutés
+  (`RegistrePdfAccesTests`). Traité comme un correctif isolé, pas comme un
+  lot fonctionnel : ce cas illustre qu'une revue ciblée peut encore révéler,
+  après un audit approfondi, un point isolé oublié — la sécurité reste une
+  propriété entretenue dans la durée, pas un état figé.
 
 ## Phase 2 — Sécurité de production
 

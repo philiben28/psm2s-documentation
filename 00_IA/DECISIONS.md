@@ -5,7 +5,7 @@ Registre des décisions du Directeur Technique / Product Owner.
 Référencé par START_HERE.md. Ce fichier ne contient que des décisions
 **actées** (validées en revue), pas des pistes ou des idées à l'étude.
 Il se complète au fil des lots ; il ne remplace pas les comptes-rendus
-détaillés de chaque lot (`Documentation/Audits/`, `Documentation/Developpements/`),
+détaillés de chaque lot (`Documentation/06_Historique/`, `Documentation/03_Développement/`),
 qui restent la source de référence pour le détail technique.
 
 ---
@@ -89,7 +89,7 @@ qui restent la source de référence pour le détail technique.
   qu'une plateforme n'est pas suivie par Git (son état réel peut diverger
   de tout commit de référence). Recommandation de fond : faire passer
   chaque plateforme sous `Git Version Control` cPanel.
-- **PROC-001** (`Documentation/PROC-001_Deploiement_Plateforme_PSM2S.md`)
+- **PROC-001** (`Documentation/08_Procedures/PROC-001_Deploiement_Plateforme_PSM2S.md`)
   est le document permanent de référence pour tout déploiement (nouveau
   serveur ou mise à jour), construit à partir de l'expérience réelle de
   L3.1 plutôt que d'une procédure théorique.
@@ -97,7 +97,7 @@ qui restent la source de référence pour le détail technique.
   `DJANGO_SSL`/HSTS sur formation n'est pas ouverte immédiatement ; L3.3
   (PROC-002) priorisé avant, décision stratégique DT liée à la trajectoire
   multi-clients de PSM2S.
-- **PROC-002** (`Documentation/PROC-002_Maintenance_Instance_Client_PSM2S.md`,
+- **PROC-002** (`Documentation/08_Procedures/PROC-002_Maintenance_Instance_Client_PSM2S.md`,
   L3.3, clos 04/07/2026) : procédure de correctif ciblé sur une instance
   déjà déployée (identifier → vérifier l'état réel → corriger en local,
   périmètre strict → tester → déployer le correctif ciblé, en s'appuyant
@@ -131,7 +131,7 @@ qui restent la source de référence pour le détail technique.
   concevoir par anticipation).
 - **L3.4.3 — Politique d'évolution Core/Variante** (validée DT,
   04/07/2026), élevée au rang de document permanent : `POLITIQUE-001`
-  (`Documentation/POLITIQUE-001_Evolution_Core_Variante_PSM2S.md`).
+  (`Documentation/02_Architecture/POLITIQUE-001_Evolution_Core_Variante_PSM2S.md`).
   Séquence de décision à appliquer à toute demande : Paramètre → Module
   commun → Généralisation au Core → Personnalisation métier en dernier
   recours. Étape 4 (personnalisation métier) exige une validation DT
@@ -149,7 +149,7 @@ qui restent la source de référence pour le détail technique.
   appliqué à un nouveau serveur, aucune nouvelle procédure.
 - **L3.4 clos** (04/07/2026) — premier document d'architecture durable de
   PSM2S : fixe les règles d'évolution futures, pas seulement l'état actuel.
-  Documents produits : L3.4.1 à L3.4.4 (`Documentation/Developpements/`)
+  Documents produits : L3.4.1 à L3.4.4 (`Documentation/03_Développement/`)
   et `POLITIQUE-001` (référence permanente).
 - **L3.4 Phase 4 (Développement) commitée et poussée** (04/07/2026,
   commit `a261a88`) : 137/137 tests verts, aucune régression. Niveau 1
@@ -157,6 +157,15 @@ qui restent la source de référence pour le détail technique.
   opérationnels. Tickets/Interventions volontairement non câblé (couplage
   croisé avec les autres modules, cf. compte-rendu Phase 4) — mécanisme
   déjà prêt à l'accueillir en lot séparé.
+- **Organisation documentaire** (04/07/2026) : structure actuelle
+  conservée (`00_IA/`, `Audits/`, `Developpements/`, racine) ; réorganisation
+  physique reportée jusqu'à ce que `Documentation/` soit elle-même versionnée
+  (risque de renvois cassés sans historique Git pour revenir en arrière).
+  `Documentation/INDEX.md` devient le point d'entrée officiel du catalogue.
+  Sauvegarde mise en place : dépôt Git privé séparé
+  `github.com/philiben28/psm2s-documentation` (distinct du dépôt de code),
+  premier commit `1f51c85` poussé. Secret en clair
+  (`07_ Ressources/la derniere clé secret_key.txt`) exclu via `.gitignore`.
 
 ---
 

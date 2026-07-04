@@ -5,7 +5,7 @@ que `IA_RULES.md`, `PROC-001` et `PROC-002` (élevé au rang de référence
 permanente le 04/07/2026, sur décision du Directeur Technique).
 Issu de l'analyse L3.4.1 (cartographie), L3.4.2 (niveaux de
 personnalisation) et L3.4.3 (règles d'évolution) — voir
-`Documentation/Developpements/2026-07-04_L3.4.1_*.md` à `L3.4.3_*.md` pour
+`Documentation/03_Développement/2026-07-04_L3.4.1_*.md` à `L3.4.3_*.md` pour
 le détail du raisonnement ayant produit cette politique.
 
 ## Portée

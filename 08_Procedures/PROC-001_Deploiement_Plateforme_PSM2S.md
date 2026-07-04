@@ -4,7 +4,7 @@ Statut : document permanent et officiel de la plateforme (Lot L3.2,
 04/07/2026), au même titre que `DEPLOIEMENT_o2switch.md`.
 Rédigé à partir de l'expérience réelle du déploiement L3.1
 (resynchronisation de la plateforme formation), pas d'une procédure
-théorique — voir `Documentation/Developpements/2026-07-04_L3.1_Resynchronisation_Formation_CompteRendu.md`
+théorique — voir `Documentation/03_Développement/2026-07-04_L3.1_Resynchronisation_Formation_CompteRendu.md`
 pour le détail des incidents ayant produit cette procédure.
 
 ## Champ d'application

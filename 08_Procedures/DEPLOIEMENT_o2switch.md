@@ -273,7 +273,7 @@ connu (voir compte-rendu L3.1).
 Toutes ces variables sont **optionnelles** : en leur absence, l'instance se
 comporte exactement comme avant L3.4 (identité PSM2S/ADPEP28 actuelle, tous
 les modules actifs). Voir `POLITIQUE-001` et
-`Documentation/Developpements/2026-07-04_L3.4.4_Architecture_Core_Variantes.md`
+`Documentation/03_Développement/2026-07-04_L3.4.4_Architecture_Core_Variantes.md`
 pour le détail de l'architecture.
 
 ## 5. Procédure cible de mise en production (rappel, finalisée aux lots C1/C3)

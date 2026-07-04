@@ -173,14 +173,24 @@ qui restent la source de référence pour le détail technique.
 
 ## Phase 4 — Enrichissement fonctionnel (ouverte le 04/07/2026)
 
-- **Lot 1 — Tableau de bord Directeur enrichi** (validé DT, développé et
+- **Convention de nommage** (04/07/2026) : les lots fonctionnels de la
+  Phase 4 sont numérotés **P4-L1, P4-L2, …**, comme des jalons produit —
+  plus lisible qu'une succession de commits, et facilite le lien entre
+  développements, documents d'architecture, tests, décisions et
+  démonstrations clients. Cycle attendu pour chaque lot : vérification du
+  backlog/existant → analyse fonctionnelle → architecture détaillée courte
+  → développement → tests → documentation → commit + mise à jour de ce
+  fichier.
+- **P4-L1 — Tableau de bord Directeur enrichi** (validé DT, développé et
   clos le 04/07/2026, commit `873da0c`) : score de conformité, 5 actions
   prioritaires, échéances proches (retard/aujourd'hui/semaine), indicateurs
   clés (contrôles en retard, prescriptions ouvertes, tickets critiques,
   contrats à échéance) ajoutés à `dashboard()`, réservés au rôle Directeur.
   **Aucune nouvelle logique métier** : moteur `registre/tableau_bord.py`
   (`collecter_conformite`) extrait de `tableau_de_bord()` et partagé par
-  les deux vues — règle explicitement fixée par le DT pour ce lot.
+  les deux vues — règle explicitement fixée par le DT pour ce lot, et
+  première application réussie, sur un développement fonctionnel, de la
+  discipline posée par `IA_RULES`/`POLITIQUE-001`/`PROC-001`/`PROC-002`.
   Question ouverte, non tranchée : un seul moteur de tableau de bord avec
   widgets par profil, vs deux pages distinctes — le partage du moteur
   garde cette option disponible sans l'imposer. 148/148 tests verts.

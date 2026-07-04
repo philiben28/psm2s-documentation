@@ -157,15 +157,19 @@ qui restent la source de référence pour le détail technique.
   opérationnels. Tickets/Interventions volontairement non câblé (couplage
   croisé avec les autres modules, cf. compte-rendu Phase 4) — mécanisme
   déjà prêt à l'accueillir en lot séparé.
-- **Organisation documentaire** (04/07/2026) : structure actuelle
-  conservée (`00_IA/`, `Audits/`, `Developpements/`, racine) ; réorganisation
-  physique reportée jusqu'à ce que `Documentation/` soit elle-même versionnée
-  (risque de renvois cassés sans historique Git pour revenir en arrière).
-  `Documentation/INDEX.md` devient le point d'entrée officiel du catalogue.
-  Sauvegarde mise en place : dépôt Git privé séparé
-  `github.com/philiben28/psm2s-documentation` (distinct du dépôt de code),
-  premier commit `1f51c85` poussé. Secret en clair
+- **Organisation documentaire** (04/07/2026) : sauvegarde mise en place
+  d'abord — dépôt Git privé séparé `github.com/philiben28/psm2s-documentation`
+  (distinct du dépôt de code), premier commit `1f51c85`, secret en clair
   (`07_ Ressources/la derniere clé secret_key.txt`) exclu via `.gitignore`.
+  `Documentation/INDEX.md` devient le point d'entrée officiel du catalogue.
+  Une fois la sauvegarde active, découverte que le DT avait déjà créé la
+  structure `01_Livre_blanc` à `08_Procedures`, restée vide et invisible aux
+  outils de recherche par fichiers — adoptée à son tour (commit `8051d88`) :
+  tous les documents replacés dans cette arborescence, `Audits/` et
+  `Developpements/` vidés. Les renvois internes des documents permanents
+  (`DECISIONS.md`, `PROC-001`, `PROC-002`, `POLITIQUE-001`,
+  `DEPLOIEMENT_o2switch.md`) mis à jour ; les comptes-rendus datés
+  (archives) volontairement non retouchés.
 
 ---
 

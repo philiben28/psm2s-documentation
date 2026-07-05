@@ -289,6 +289,52 @@ qui restent la source de référence pour le détail technique.
   technique → validation sur instance déployée → suppression de l'ancien
   champ) comme méthode de référence pour toute future évolution de schéma
   touchant des données existantes.
+- **Règle de décision PROC-002 vs PROC-001** (05/07/2026) : un déploiement
+  ciblé (PROC-002) suppose que l'instance cible est déjà synchronisée avec
+  le dépôt, à l'exception du correctif déployé. La resynchronisation de
+  formation a révélé que ce n'était pas le cas (`registre/tableau_bord.py`,
+  introduit par P4-L1, absent de la plateforme — P4-L1, P4-L2 et le
+  correctif IDOR n'y avaient jamais été déployés). **Règle retenue** : si
+  la synchronisation ne peut pas être démontrée avec certitude, appliquer
+  PROC-001 (resynchronisation complète) plutôt que de reconstituer un
+  delta manuellement — même leçon que L3.1, appliquée cette fois au choix
+  de procédure. `PROC-002` mis à jour en conséquence.
+- **Anomalies découvertes lors de la resynchronisation formation**
+  (05/07/2026, hors périmètre de P4-L3, sans lien avec ce lot) :
+  - **DEBUG-FORMATION** : `config/settings_formation.py` (fichier serveur,
+    hors Git) redéfinissait `DEBUG = True` en dur, écrasant le défaut sûr
+    de `settings.py` — faille de sécurité active, jamais détectée faute
+    d'avoir exécuté `check --deploy` sous le bon `DJANGO_SETTINGS_MODULE`
+    avant ce jour. Corrigée sur le serveur (ligne supprimée, hérite du
+    défaut `False`) ; `security.W018` confirmé disparu après correction.
+  - **DB-NOM-FORMATION** : la base réellement utilisée par formation est
+    `db_formation.sqlite3` (définie dans `settings_formation.py`), pas
+    `db.sqlite3` — les premières sauvegardes de la journée portaient sur
+    le mauvais fichier. Base réelle sauvegardée a posteriori, taille
+    vérifiée identique.
+  - **`PROC-001` complété** : nouvelle Étape 0.2 (vérification du module
+    de settings réel, du nom de la base, et de `DEBUG` avant toute
+    sauvegarde/migration sur une instance à settings dédié) — aurait permis
+    de détecter ces deux anomalies dès le début.
+- **Correctif dédié — Incohérence Interface/Permissions – Contrats**
+  (05/07/2026, découvert pendant la vérification fonctionnelle du
+  resync formation, hors P4-L3) : `detail_etablissement.html` masquait le
+  bouton « Nouveau contrat » et les icônes « Modifier »/« Supprimer » des
+  contrats derrière `{% if user.est_responsable or user.est_admin %}`,
+  alors que les vues `nouveau_contrat`/`modifier_contrat`/`supprimer_contrat`
+  sont toutes `@gestionnaire_requis` (admin, responsable_securite,
+  **directeur**) — un Directeur avait donc le droit d'accès (accessible par
+  URL directe) mais aucune affordance dans l'interface. Pas une urgence de
+  sécurité, mais le type d'incohérence pouvant dérouter un client en
+  démonstration. Corrigé en ajoutant `or user.est_directeur` aux 3
+  occurrences concernant les Contrats uniquement (bouton « Nouveau
+  contrat », icônes « Modifier »/« Supprimer », lien vide « Ajouter le
+  premier contrat ») — les 4 autres occurrences du même motif dans le
+  fichier (bâtiments, commissions) sont **hors périmètre** de ce correctif
+  et laissées inchangées, conformément à POLITIQUE-001 (ne pas généraliser
+  par anticipation). Un test de non-régression dédié ajouté
+  (`ContratAccesTests.test_directeur_voit_le_bouton_modifier_un_contrat`).
+  Traité comme un correctif isolé, distinct de P4-L3 et de P4-L2.
 
 ---
 

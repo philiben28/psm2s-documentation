@@ -243,6 +243,35 @@ qui restent la source de référence pour le détail technique.
   production et en formation. Aucun nouvel écran de gestion des
   prestataires dans ce lot (resterait à faire si le besoin de navigation
   se confirme). 170/170 tests verts.
+- **Condition de passage à l'Étape B — reformulée par le DT** (05/07/2026) :
+  non plus un délai d'attente, mais une validation technique (tests verts,
+  migration en dev, migration confirmée sur formation, aucune
+  `prestataire_fk` orpheline, revue du code encore lié au champ texte).
+  Contexte explicite : PSM2S n'a pas encore de clients en production, le
+  facteur limitant n'est plus le risque utilisateur mais la dette
+  technique de deux champs parallèles. Dès validation technique complète,
+  passage direct à l'Étape B, sans délai artificiel.
+- **P4-L3, Étape A — validée sur la plateforme de formation** (05/07/2026) :
+  migration appliquée (`0020_prestataire`, `0021_migrer_prestataires_contrats`),
+  0 contrat orphelin (`prestataire_fk` vide avec texte non vide), tests
+  fonctionnels concluants (dédoublonnage confirmé, création/modification
+  de contrat, alerte de contrat à échéance toujours correcte sur le
+  tableau de bord Directeur). Les 4 conditions posées par le DT sont
+  satisfaites.
+- **Anomalie découverte et corrigée pendant ce déploiement** (05/07/2026,
+  hors périmètre de P4-L3 lui-même) : sur la plateforme de formation,
+  `python manage.py migrate` sans variable explicite utilise
+  `config.settings` (le défaut), alors que `passenger_wsgi.py` fixe
+  `DJANGO_SETTINGS_MODULE=config.settings_formation` — deux bases
+  distinctes. Conséquence : les migrations 0019 à 0021 n'avaient jamais
+  été appliquées à la base réellement servie par Passenger, sans qu'aucune
+  erreur ne le signale jusqu'à ce déploiement (aucune migration n'avait été
+  créée depuis 0019). Corrigé : migration 0019 fakée après vérification
+  que la contrainte `unique_together` visée n'existait déjà plus
+  physiquement sur cette base (donc aucune perte réelle), puis 0020/0021
+  appliquées normalement. **`PROC-001` (Étape 4) et `PROC-002` mis à jour**
+  pour imposer la vérification de `DJANGO_SETTINGS_MODULE` avant toute
+  commande `migrate` sur une instance à settings dédié.
 
 ---
 

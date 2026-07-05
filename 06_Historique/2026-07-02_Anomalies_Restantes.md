@@ -48,6 +48,7 @@ Cycle de vie d'une entrée : `identifiée → décidée en revue → inscrite (O
 | M11 | Double `@classmethod` sur `peut_signer` (compat Python) | fait |
 | E5 | Visibilité liste DUERP (`peut_tout_voir` / `duerp_liste`) | fait |
 | IDOR-PDF | IDOR `registre_pdf` — oublié du sweep C4-1→C4-7, identifié et corrigé le 04/07/2026 (hors Phase 1) | fait |
+| SETTINGS-FORMATION | `manage.py migrate` sans `DJANGO_SETTINGS_MODULE` explicite appliquait les migrations à `config.settings` au lieu de `config.settings_formation` (celui servi par Passenger) sur la plateforme formation — migrations 0019-0021 jamais appliquées à la vraie base jusqu'au 05/07/2026. Corrigé (migration 0019 fakée après vérification, 0020/0021 appliquées) ; `PROC-001`/`PROC-002` mis à jour pour l'empêcher à l'avenir | fait |
 
 ---
 

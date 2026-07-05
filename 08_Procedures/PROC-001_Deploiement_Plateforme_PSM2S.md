@@ -99,6 +99,29 @@ Au minimum, avant de redémarrer l'application :
 
 ## Étape 4 — Commandes serveur
 
+**Piège découvert le 05/07/2026 (P4-L3, Étape A) — à vérifier avant toute
+commande** : sur une plateforme dont `passenger_wsgi.py` fixe
+`DJANGO_SETTINGS_MODULE` sur un module dédié (ex. `config.settings_formation`
+pour la formation), le terminal (venv activé via cPanel ou SSH) **n'utilise
+pas automatiquement ce module** — `manage.py` retombe sur son défaut
+(`config.settings`). Résultat concret constaté : `migrate` s'exécute sans
+erreur, annonce « OK », mais modifie une base différente de celle que
+Passenger sert réellement ; l'application web continue de pointer vers un
+schéma non migré (`OperationalError: no such column`).
+
+**Vérifier systématiquement**, avant toute commande de migration :
+```bash
+cat passenger_wsgi.py   # repérer la valeur de DJANGO_SETTINGS_MODULE
+```
+Si elle diffère du défaut, **préfixer explicitement chaque commande** :
+```bash
+DJANGO_SETTINGS_MODULE=config.settings_formation python manage.py migrate
+DJANGO_SETTINGS_MODULE=config.settings_formation python manage.py showmigrations registre
+```
+Ne jamais se fier à un `migrate` "silencieux" (sans cette variable) sur une
+plateforme utilisant un settings dédié — toujours confirmer avec
+`showmigrations` sous le **même** module que celui utilisé par Passenger.
+
 Via le terminal de l'application Python (cPanel « Setup Python App » →
 activation du virtualenv, ou SSH) :
 

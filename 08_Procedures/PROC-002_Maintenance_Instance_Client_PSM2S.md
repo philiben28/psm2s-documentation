@@ -82,6 +82,12 @@ correctif touche l'un d'eux.
 - Si le correctif touche des dépendances (migration, variable
   d'environnement) : dérouler les étapes correspondantes de `PROC-001`
   (collectstatic / migrate / check --deploy / redémarrage Passenger).
+- **Vérifier `DJANGO_SETTINGS_MODULE`** (voir `PROC-001` Étape 4) avant
+  toute commande `migrate` : sur une instance dont `passenger_wsgi.py` fixe
+  un settings dédié, préfixer explicitement la commande
+  (`DJANGO_SETTINGS_MODULE=... python manage.py migrate`), sous peine de
+  migrer silencieusement une base différente de celle réellement servie.
+  Confirmer ensuite avec `showmigrations`, sous le même module.
 
 ## Étape 6 — Vérifier sur l'instance
 

@@ -335,6 +335,17 @@ qui restent la source de référence pour le détail technique.
   par anticipation). Un test de non-régression dédié ajouté
   (`ContratAccesTests.test_directeur_voit_le_bouton_modifier_un_contrat`).
   Traité comme un correctif isolé, distinct de P4-L3 et de P4-L2.
+- **Sortie de la période transitoire PROC-001 — formation à nouveau
+  synchronisée** (05/07/2026) : à compter de la resynchronisation complète
+  du 05/07/2026 (resync HEAD, migrations appliquées, correctif IDOR
+  validé, `DEBUG=True` corrigé, vraie base identifiée, référentiel
+  Prestataires validé), la plateforme de formation est de nouveau
+  considérée comme **synchronisée avec le dépôt Git**, hors fichiers
+  spécifiques au serveur documentés dans `PROC-001` (Étape 0). Les futurs
+  déploiements correctifs peuvent utiliser `PROC-002` tant que cette
+  synchronisation reste maintenue. Critère de sortie de cette hypothèse
+  (donc de retour à `PROC-001`) : voir la précondition ajoutée à
+  `PROC-002` (« Règle de décision — PROC-002 ou PROC-001 ? »).
 
 ---
 

@@ -19,6 +19,36 @@ s'applique quand le besoin n'est **pas** de déployer un lot déjà validé
 et testé en développement, mais de **corriger un défaut constaté sur une
 instance déjà en ligne**.
 
+## Règle de décision — PROC-002 ou PROC-001 ?
+
+**Précondition de PROC-002** : l'instance cible est connue comme
+synchronisée avec le dépôt de référence (hors fichiers spécifiques au
+serveur documentés dans `PROC-001` Étape 0). Si cette condition n'est plus
+démontrable — dépôt manuel, doute sur l'état réel, modification hors Git
+constatée ou suspectée — revenir à `PROC-001` (resynchronisation complète)
+avant tout correctif ciblé. Le choix entre les deux procédures repose ainsi
+sur un critère vérifiable, jamais sur une impression.
+
+**Découvert le 05/07/2026 (P4-L3, Étape B)** : PROC-002 suppose
+implicitement que l'instance cible est déjà synchronisée avec le dépôt de
+référence, à l'exception du correctif ciblé qu'on s'apprête à déployer. Un
+déploiement PROC-002 sur `registre/forms.py` a révélé que
+`registre/tableau_bord.py` (introduit par un lot antérieur, P4-L1)
+n'existait pas du tout sur la plateforme formation — celle-ci n'avait en
+réalité jamais reçu P4-L1 ni P4-L2, ni le correctif IDOR `registre_pdf`.
+
+**Règle retenue** : avant tout déploiement ciblé (PROC-002), vérifier que
+l'instance cible est déjà synchronisée avec le dépôt de référence. Si
+cette condition ne peut pas être démontrée avec certitude (plateforme non
+suivie par `Git Version Control` cPanel, historique de déploiement
+incertain ou incomplet), **appliquer PROC-001** (resynchronisation
+complète) à la place, même si le changement à l'origine du besoin semblait
+ciblé. C'est la même leçon que celle de L3.1 (fichiers divergents hors du
+diff calculé), appliquée cette fois au choix de procédure lui-même plutôt
+qu'à la méthode de transfert : un doute sur l'état réel d'une plateforme
+se résout par une resynchronisation complète, jamais par une
+reconstitution manuelle de delta.
+
 ---
 
 ## Étape 1 — Identifier précisément l'instance et le défaut

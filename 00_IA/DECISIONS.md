@@ -346,6 +346,14 @@ qui restent la source de référence pour le détail technique.
   synchronisation reste maintenue. Critère de sortie de cette hypothèse
   (donc de retour à `PROC-001`) : voir la précondition ajoutée à
   `PROC-002` (« Règle de décision — PROC-002 ou PROC-001 ? »).
+- **Clôture formelle — resynchronisation formation du 05/07/2026 et
+  P4-L3** : la checklist de vérification post-déploiement (`PROC-001`
+  Étape 6) est intégralement déroulée sur formation, tous points confirmés,
+  y compris le périmètre par rôle (Directeur Roger Hanin : accès limité à
+  IME Le Tramplin, aucun autre établissement visible). P4-L1, P4-L2, le
+  correctif IDOR `registre_pdf`, P4-L3 (Étapes A et B) et le correctif
+  Contrats sont donc considérés comme **formellement clos, en développement
+  comme sur formation**.
 
 ---
 

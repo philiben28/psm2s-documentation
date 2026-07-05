@@ -355,6 +355,48 @@ qui restent la source de référence pour le détail technique.
   Contrats sont donc considérés comme **formellement clos, en développement
   comme sur formation**.
 
+## P4-L4 — Référentiel partagé des partenaires techniques (ouvert le 05/07/2026)
+
+- **Besoin métier identifié** : au-delà de la simple identification du
+  titulaire d'un contrat (P4-L3), l'organisation possède déjà une
+  connaissance des prestataires qui interviennent dans plusieurs
+  établissements — connaissance aujourd'hui non capitalisée (le Directeur
+  repart de zéro : recherche, carnet d'adresses, mémoire des collègues).
+  PSM2S doit exposer cette connaissance déjà présente dans les données
+  existantes (`Contrat.etablissement` + `Contrat.prestataire_fk`), pas la
+  recréer.
+- **Découpage retenu** (POLITIQUE-001 — plusieurs petits lots, pas un
+  module massif) :
+  - **P4-L4** : fiche Prestataire en lecture seule (liste des prestataires,
+    fiche par prestataire avec coordonnées + établissements où il
+    intervient + type de contrôle), lien direct depuis la fiche Contrat.
+    Aucune migration : uniquement des vues/templates sur les relations
+    existantes.
+  - **P4-L5** (à ouvrir après retour d'usage de L4) : création/modification
+    d'un Prestataire depuis un écran dédié ; remplacement du champ texte
+    libre du formulaire Contrat par une recherche parmi les prestataires
+    existants.
+  - **P4-L6** (candidat, non garanti) : suggestion proactive de
+    prestataires pertinents à la création d'un contrat ou d'un
+    établissement — à confirmer seulement si le besoin se vérifie après
+    L4/L5.
+  - Hors périmètre, différé : catégorisation par spécialité (le type de
+    contrôle du contrat suffit aujourd'hui), raccordement d'`Intervention`,
+    `RealisationControle`, `AnalyseEau` (POLITIQUE-001, inchangé),
+    évaluation/historique de performance (non demandé).
+- **Décision de périmètre/sécurité (05/07/2026)** : la vue croisée « ce
+  prestataire intervient aussi dans tel autre établissement » pose une
+  question de périmètre au regard de la discipline IDOR (C4-1→C4-7) — un
+  Directeur ne doit pas apprendre l'existence ou le nom d'un établissement
+  hors de son périmètre via cette vue. **Décidé** : la vue croisée complète
+  (liste des autres établissements) est réservée aux rôles ayant
+  `peut_tout_voir` (`admin`, `responsable_securite`, y compris les
+  utilisateurs Directeur Général et Directeur Général adjoint, déjà créés
+  avec le rôle `responsable_securite` — aucun nouveau rôle nécessaire dans
+  `ROLE_CHOICES`). Un Directeur ne voit, pour un prestataire donné, que sa
+  propre relation contractuelle (son ou ses établissements), pas la liste
+  des autres établissements clients de ce prestataire.
+
 ---
 
 *Fichier vivant : ajouter une entrée par décision structurante validée en

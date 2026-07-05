@@ -206,6 +206,24 @@ qui restent la source de référence pour le détail technique.
   Question ouverte, non tranchée : un seul moteur de tableau de bord avec
   widgets par profil, vs deux pages distinctes — le partage du moteur
   garde cette option disponible sans l'imposer. 148/148 tests verts.
+- **Méthode de sélection des lots Phase 4, au-delà du backlog écrit**
+  (validée DT, 05/07/2026) : pour chaque nouveau lot, identifier le plus
+  grand écart entre la promesse de la Vision et l'expérience vécue par un
+  Directeur lors d'une démonstration de dix minutes, plutôt que de dérouler
+  le backlog dans l'ordre. Adoptée comme méthode de travail pour les
+  prochains lots fonctionnels.
+- **P4-L2 — Lien direct vers la fiche depuis « Mes actions prioritaires »**
+  (validé DT, développé et clos le 05/07/2026) : chaque ligne du widget
+  ouvre désormais directement la fiche du contrôle ou du contrat concerné
+  (`modifier_controle`/`modifier_contrat`), au lieu de la fiche générale de
+  l'établissement — corrige un écart avec l'exigence écrite du backlog
+  Priorité 3 (« chaque ligne doit ouvrir directement la fiche concernée »),
+  découvert en rejouant l'expérience Directeur après P4-L1. **Principe
+  d'architecture posé par le DT** : le moteur `collecter_conformite` reste
+  agnostique de la navigation — il expose `cible_type`/`cible_pk` (identité
+  de l'objet), jamais une URL ; c'est la couche de présentation (template)
+  qui construit le lien. Garde le moteur réutilisable par un futur écran,
+  une API ou une application mobile. 156/156 tests verts.
 
 ---
 

@@ -542,6 +542,28 @@ qui restent la source de référence pour le détail technique.
   aucune donnée existante à transformer. Reste à déployer sur formation
   (`PROC-002`, avec l'étape migration de `PROC-001`) et à vérifier avant
   clôture formelle.
+- **P4-L5 clos, dev et formation (05/07/2026)**. Migration
+  `0023_correspondantlocal` appliquée et confirmée (`showmigrations`).
+  Vérification fonctionnelle (Étape 6) confirmée : icône « Modifier »
+  référentiel (admin/responsable_securite), création combinée « Nouveau
+  partenaire » (Directeur), périmètre du correspondant local confirmé en
+  conditions réelles (Roger Hanin ne voit que sa propre ligne sur un
+  partenaire partagé ; admin voit les deux).
+  **Incident de déploiement rencontré et corrigé** : les deux nouveaux
+  templates (`prestataire_form.html`, `correspondant_local_form.html`)
+  avaient été omis du transfert initial (seuls les fichiers déjà existants
+  à écraser avaient été copiés) — `Server Error 500`
+  (`TemplateDoesNotExist`) sur `modifier_prestataire` et
+  `correspondant_local`, et bouton « Nouveau partenaire » sans effet.
+  Diagnostiqué sans navigateur, via `manage.py shell` +
+  `RequestFactory` appelant directement les vues (plus rapide que la
+  recherche du bon fichier de log applicatif — les logs `~/logs/` de
+  cPanel ne contiennent que l'accès Apache, pas la trace Python).
+  **Leçon retenue pour les prochains lots** : lors d'un transfert
+  PROC-002/PROC-001, vérifier explicitement la présence des fichiers
+  **nouveaux** (pas seulement les modifiés) sur l'instance cible — un
+  transfert peut réussir silencieusement en ne copiant que les fichiers
+  déjà connus de part et d'autre.
 
 ---
 

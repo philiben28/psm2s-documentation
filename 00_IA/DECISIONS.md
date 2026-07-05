@@ -224,6 +224,25 @@ qui restent la source de référence pour le détail technique.
   de l'objet), jamais une URL ; c'est la couche de présentation (template)
   qui construit le lien. Garde le moteur réutilisable par un futur écran,
   une API ou une application mobile. 156/156 tests verts.
+- **P4-L3 — Référentiel Prestataires, Étape A** (validé DT, développé le
+  05/07/2026) : diagnostic — le nom d'un prestataire était déjà dupliqué en
+  texte libre dans 4 modèles (`Contrat`, `Intervention`,
+  `RealisationControle.organisme`, `AnalyseEau.laboratoire`), donc déjà une
+  entité métier de fait. **Périmètre validé** : nouvelle entité
+  `Prestataire` (nom, contact, téléphone, email, adresse, site web —
+  volontairement minimal), branchée **uniquement sur `Contrat`** dans ce
+  lot ; les 3 autres champs restent en texte libre, candidats à un futur
+  lot si le besoin se confirme (conforme `POLITIQUE-001` : généraliser
+  seulement quand le besoin est prouvé). **Migration en deux étapes**
+  (recommandation DT, pour un retour arrière simple) : Étape A (ce lot) —
+  `Contrat.prestataire_fk` coexiste avec le champ texte `prestataire`,
+  migration de données avec dédoublonnage insensible à la casse
+  (SOCOTEC/Socotec/socotec → un seul `Prestataire`), formulaires déjà
+  branchés sur la FK ; Étape B (suppression du champ texte) différée,
+  nouvelle validation DT explicite requise après confirmation en
+  production et en formation. Aucun nouvel écran de gestion des
+  prestataires dans ce lot (resterait à faire si le besoin de navigation
+  se confirme). 170/170 tests verts.
 
 ---
 

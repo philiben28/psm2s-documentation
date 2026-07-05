@@ -425,9 +425,19 @@ qui restent la source de référence pour le détail technique.
   Périmètre vérifié par test : un admin voit tous les établissements
   clients d'un prestataire et les compteurs globaux ; un Directeur ne
   voit que sa propre relation contractuelle et reçoit un 404 (jamais 403)
-  sur un prestataire hors de son périmètre. **Déploiement formation
-  (PROC-002) en cours** — clôture formelle (dev + formation) à consigner
-  une fois l'Étape 6 (vérification sur formation) confirmée.
+  sur un prestataire hors de son périmètre.
+- **P4-L4 clos, dev et formation (05/07/2026)** : déployé sur formation via
+  `PROC-002` (7 fichiers transférés — `views.py`, `permissions.py`,
+  `urls.py`, `base.html`, `detail_etablissement.html`,
+  `prestataires_liste.html`, `prestataire_detail.html` — redémarrage
+  Passenger nécessaire, fichiers `.py` modifiés). Checklist de vérification
+  (`PROC-001` Étape 6/`PROC-002` Étape 6) déroulée et confirmée : menu
+  Partenaires visible pour admin/responsable/directeur ; fiche et liste
+  correctes ; lien depuis la fiche Contrat fonctionnel ; **périmètre par
+  rôle confirmé en conditions réelles** — le Directeur Roger Hanin (IME Le
+  Tramplin) ne voit dans la liste Partenaires que les prestataires reliés
+  à ses propres contrats, et sur la fiche d'un prestataire partagé ne voit
+  que sa propre ligne, aucun autre établissement.
 - **Gap constaté à l'usage (05/07/2026), immédiatement après P4-L4** :
   `Prestataire` n'est exposé dans **aucune** interface de saisie —
   ni écran PSM2S (hors périmètre volontaire de P4-L4), ni Django admin

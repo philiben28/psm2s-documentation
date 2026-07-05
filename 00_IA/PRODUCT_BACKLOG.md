@@ -74,15 +74,21 @@ fonctionnelle du correctif Contrats sur formation. Pas une anomalie :
 comportement incorrect. Découpage complet et décision de périmètre dans
 `DECISIONS.md` (§ P4-L4).
 
-- **P4-L4 — FAIT (05/07/2026)** : liste des partenaires et fiche par
-  prestataire, en lecture seule (coordonnées, établissements où il
-  intervient, type de contrôle concerné, dates premier contrat/dernière
-  intervention contractuelle), lien direct depuis la fiche Contrat.
-  Aucune migration.
-- **P4-L5 (à ouvrir après retour d'usage de L4)** : écran de
-  création/modification d'un Prestataire (nom, contact, téléphone, email,
-  adresse, site web) ; remplacement du champ texte libre du formulaire
-  Contrat par une recherche parmi les prestataires existants.
+- **P4-L4 — développé, testé, documenté, commité (05/07/2026)** : liste des
+  partenaires et fiche par prestataire, en lecture seule (coordonnées,
+  établissements où il intervient, type de contrôle concerné, dates
+  premier contrat/dernière intervention contractuelle), lien direct depuis
+  la fiche Contrat. Aucune migration. Déploiement formation (PROC-002) en
+  cours de vérification.
+- **P4-L5 — priorité immédiate après clôture complète de P4-L4**
+  (dev + formation), et non plus « à ouvrir après retour d'usage » : la
+  mise en service de P4-L4 a révélé qu'un prestataire créé via le
+  formulaire Contrat n'a aujourd'hui **aucun moyen d'être complété**
+  (contact, téléphone, email, adresse, site web) — ni écran PSM2S, ni
+  Django admin (explicitement écarté comme solution, cf. `DECISIONS.md`).
+  Contenu du lot, inchangé : écran de création/modification d'un
+  Prestataire ; remplacement du champ texte libre du formulaire Contrat
+  par une recherche parmi les prestataires existants.
 - **P4-L6 (candidat, non garanti)** : suggestion proactive de
   prestataires pertinents à la création d'un contrat ou d'un
   établissement — à confirmer seulement si le besoin se vérifie après

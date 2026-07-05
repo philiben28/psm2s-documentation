@@ -418,14 +418,32 @@ qui restent la source de référence pour le détail technique.
   M contrats ») plutôt qu'en contrats seuls ; ajout des dates « Premier
   contrat » et « Dernière intervention contractuelle » sur la fiche
   (agrégation `Min`/`Max` sur les contrats visibles, aucune nouvelle donnée).
-- **P4-L4 clos (05/07/2026)** : développé, testé (9 tests dédiés,
-  179/179 verts avec la suite complète), documenté. Écrans livrés :
-  liste des partenaires (`registre:liste_prestataires`) et fiche
+- **P4-L4 — développé, testé, documenté, commité (05/07/2026)** : 9 tests
+  dédiés, 179/179 verts avec la suite complète. Écrans livrés : liste des
+  partenaires (`registre:liste_prestataires`) et fiche
   (`registre:detail_prestataire`), lien direct depuis la fiche Contrat.
   Périmètre vérifié par test : un admin voit tous les établissements
   clients d'un prestataire et les compteurs globaux ; un Directeur ne
   voit que sa propre relation contractuelle et reçoit un 404 (jamais 403)
-  sur un prestataire hors de son périmètre.
+  sur un prestataire hors de son périmètre. **Déploiement formation
+  (PROC-002) en cours** — clôture formelle (dev + formation) à consigner
+  une fois l'Étape 6 (vérification sur formation) confirmée.
+- **Gap constaté à l'usage (05/07/2026), immédiatement après P4-L4** :
+  `Prestataire` n'est exposé dans **aucune** interface de saisie —
+  ni écran PSM2S (hors périmètre volontaire de P4-L4), ni Django admin
+  (jamais enregistré dans `admin.py`). Un partenaire créé implicitement
+  depuis le formulaire Contrat (`get_or_create_normalise`, nom seul) n'a
+  donc aujourd'hui aucun moyen d'être complété (contact, téléphone, email,
+  adresse, site web) autrement que par une modification directe en base.
+  **Décision** : ne pas utiliser le Django admin comme solution
+  fonctionnelle, même provisoire — contraire à la vision PSM2S où chaque
+  objet métier important se gère depuis l'application elle-même, pas via
+  un outil technique. Ne pas reporter indéfiniment ce point non plus.
+  **P4-L5 est élevé au rang de priorité immédiate après clôture complète
+  de P4-L4** (dev + formation) : écran de création/modification dédié,
+  et remplacement du champ texte libre du formulaire Contrat par une
+  recherche parmi les prestataires existants — cadrage déjà posé plus haut
+  dans cette section, inchangé.
 
 ---
 

@@ -396,6 +396,36 @@ qui restent la source de référence pour le détail technique.
   `ROLE_CHOICES`). Un Directeur ne voit, pour un prestataire donné, que sa
   propre relation contractuelle (son ou ses établissements), pas la liste
   des autres établissements clients de ce prestataire.
+- **Feu Vert n°3 accordé (05/07/2026)**, après revue fonctionnelle du plan
+  technique. Points validés sans réserve : réutilisation intégrale de
+  l'existant (aucun nouveau modèle, aucune migration), permissions
+  (`get_prestataire_ou_404`, même famille que `get_etablissement_ou_404`).
+  Clarification demandée et apportée avant le feu vert : `Contrat.type_controle`
+  est une `ForeignKey` propre au modèle `Contrat` (catalogue `TypeControle`,
+  même référentiel que `ControleEtablissement`), mais **sans aucune relation**
+  avec `ControleEtablissement`/`RealisationControle` — vérifié dans le code.
+  C'est un attribut descriptif du contrat (« quel domaine réglementaire ce
+  contrat couvre-t-il »), pas un pointeur vers un événement de contrôle
+  réalisé. La chaîne affichée sur la fiche Prestataire est donc bien
+  `Prestataire → Contrat → Établissement` (avec le type de contrôle comme
+  attribut du contrat), sans confusion entre contrat de maintenance et
+  contrôle réglementaire.
+  Trois ajustements de cadrage retenus avant développement : vocabulaire
+  d'interface (menu « Partenaires », titre d'écran « Référentiel des
+  partenaires », fiche continuant d'afficher « Prestataire » — aucun
+  changement de modèle ni de nom de classe) ; compteur de la liste exprimé
+  en établissements ET contrats (« Intervient dans N établissements —
+  M contrats ») plutôt qu'en contrats seuls ; ajout des dates « Premier
+  contrat » et « Dernière intervention contractuelle » sur la fiche
+  (agrégation `Min`/`Max` sur les contrats visibles, aucune nouvelle donnée).
+- **P4-L4 clos (05/07/2026)** : développé, testé (9 tests dédiés,
+  179/179 verts avec la suite complète), documenté. Écrans livrés :
+  liste des partenaires (`registre:liste_prestataires`) et fiche
+  (`registre:detail_prestataire`), lien direct depuis la fiche Contrat.
+  Périmètre vérifié par test : un admin voit tous les établissements
+  clients d'un prestataire et les compteurs globaux ; un Directeur ne
+  voit que sa propre relation contractuelle et reçoit un 404 (jamais 403)
+  sur un prestataire hors de son périmètre.
 
 ---
 

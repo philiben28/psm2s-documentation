@@ -272,6 +272,23 @@ qui restent la source de référence pour le détail technique.
   appliquées normalement. **`PROC-001` (Étape 4) et `PROC-002` mis à jour**
   pour imposer la vérification de `DJANGO_SETTINGS_MODULE` avant toute
   commande `migrate` sur une instance à settings dédié.
+- **P4-L3, Étape B — suppression du champ texte** (validée DT, développée
+  le 05/07/2026) : `Contrat.prestataire` (CharField) supprimé,
+  `prestataire_fk` devient l'unique source de vérité. **Périmètre tenu
+  strictement** aux trois catégories fixées par le DT : suppression du
+  champ + mise à jour du modèle ; adaptation des 8 points de consommation
+  identifiés lors de la revue (ni plus, ni moins) ; adaptation des tests
+  existants (une classe de tests devenue obsolète retirée, un test de
+  verrou de clôture ajouté). Aucun raccordement d'`Intervention`,
+  `RealisationControle` ou `AnalyseEau` — ils gardent leur propre lot
+  futur (`POLITIQUE-001`). Recherche globale confirmée : aucune référence
+  au champ texte ne subsiste hors migrations historiques (0007-0021,
+  jamais retouchées). 169/169 tests verts.
+- **P4-L3 — modèle de migration progressive** (05/07/2026) : le DT retient
+  la séquence suivie (nouvelle entité → migration de données → validation
+  technique → validation sur instance déployée → suppression de l'ancien
+  champ) comme méthode de référence pour toute future évolution de schéma
+  touchant des données existantes.
 
 ---
 

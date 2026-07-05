@@ -112,6 +112,35 @@ jamais diverger durablement de ce qui est committé.
 
 ---
 
+## Modèle de référence — migration progressive d'un champ existant
+
+Retenu comme méthode standard (DT, 05/07/2026) pour toute évolution de
+schéma touchant des données déjà en place, à partir de l'expérience réelle
+de **P4-L3 — Référentiel Prestataires** (`DECISIONS.md`) :
+
+1. **Créer la nouvelle entité/le nouveau champ**, en coexistence avec
+   l'ancien (nullable, aucune rupture de l'existant).
+2. **Migration de données** : peupler le nouveau champ à partir de
+   l'ancien (dédoublonnage minimal si la donnée source est en texte
+   libre), de façon idempotente.
+3. **Validation technique** : tests automatisés, migration exécutée sans
+   erreur en développement, vérification qu'aucune donnée n'est restée
+   orpheline.
+4. **Validation sur une instance déjà déployée** (formation avant
+   production) : mêmes vérifications, en conditions réelles — c'est ce qui
+   a révélé, lors de P4-L3, un décalage `DJANGO_SETTINGS_MODULE` resté
+   invisible jusque-là (cf. `PROC-001` Étape 4).
+5. **Suppression de l'ancien champ**, seulement une fois les 4 étapes
+   précédentes validées, dans un lot au périmètre strictement délimité
+   (suppression + adaptation des consommateurs déjà identifiés +
+   adaptation des tests — rien de plus).
+
+Cette séquence réduit le risque à chaque étape sans imposer de délai
+artificiel : le passage d'une étape à la suivante est conditionné à une
+validation technique, jamais à une durée d'attente.
+
+---
+
 ## Historique
 
 - **v1.0** (04/07/2026, L3.3) : première version. Périmètre volontairement

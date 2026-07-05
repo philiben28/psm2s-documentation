@@ -74,22 +74,43 @@ fonctionnelle du correctif Contrats sur formation. Pas une anomalie :
 comportement incorrect. Découpage complet et décision de périmètre dans
 `DECISIONS.md` (§ P4-L4).
 
-- **P4-L4 — développé, testé, documenté, commité (05/07/2026)** : liste des
-  partenaires et fiche par prestataire, en lecture seule (coordonnées,
-  établissements où il intervient, type de contrôle concerné, dates
-  premier contrat/dernière intervention contractuelle), lien direct depuis
-  la fiche Contrat. Aucune migration. Déploiement formation (PROC-002) en
-  cours de vérification.
-- **P4-L5 — priorité immédiate après clôture complète de P4-L4**
-  (dev + formation), et non plus « à ouvrir après retour d'usage » : la
-  mise en service de P4-L4 a révélé qu'un prestataire créé via le
-  formulaire Contrat n'a aujourd'hui **aucun moyen d'être complété**
-  (contact, téléphone, email, adresse, site web) — ni écran PSM2S, ni
-  Django admin (explicitement écarté comme solution, cf. `DECISIONS.md`).
-  Contenu du lot, inchangé : écran de création/modification d'un
-  Prestataire ; remplacement du champ texte libre du formulaire Contrat
-  par une recherche parmi les prestataires existants.
-- **P4-L6 (candidat, non garanti)** : suggestion proactive de
-  prestataires pertinents à la création d'un contrat ou d'un
-  établissement — à confirmer seulement si le besoin se vérifie après
-  L4/L5.
+- **P4-L4 — clos, dev et formation (05/07/2026)** : liste des partenaires
+  et fiche par prestataire, en lecture seule (coordonnées, établissements
+  où il intervient, type de contrôle concerné, dates premier
+  contrat/dernière intervention contractuelle), lien direct depuis la
+  fiche Contrat. Aucune migration. Périmètre par rôle vérifié en
+  conditions réelles sur formation.
+- **P4-L5 — Feu Vert accordé, en développement (05/07/2026)** : « Gestion
+  complète d'un partenaire », un seul écran côté utilisateur. Combine la
+  création/modification du référentiel partagé (`Prestataire` : nom,
+  téléphone, email, adresse, site web) et un nouvel objet
+  `CorrespondantLocal` — un « post-it » par couple (Prestataire,
+  Établissement) : nom du correspondant, téléphone, email, notes libres,
+  jamais partagé entre établissements. Point d'entrée « Nouveau
+  partenaire » toujours scopé à un établissement. Modification du
+  référentiel partagé réservée à admin/responsable_securite une fois créé ;
+  chaque établissement gère librement son propre correspondant local.
+  Détail complet du cadrage et de la décision d'architecture dans
+  `DECISIONS.md`. Une migration (nouvelle table `CorrespondantLocal`),
+  aucune donnée existante à transformer.
+- **P4-L6 (ex-partie de l'ancien P4-L5)** : remplacement du champ texte
+  libre du formulaire Contrat par une sélection parmi les prestataires
+  existants, détection de doublons.
+- **P4-L7 (candidat, non cadré, ex-P4-L6)** : Widget Directeur — les
+  actions prioritaires. À définir en détail le moment venu.
+
+### Contact Partenaire (futur, non numéroté — après P4-L5/L6)
+
+Révélé le 05/07/2026 pendant le cadrage de P4-L5, à partir d'un exemple
+réel (SOCOTEC : plusieurs agences, plusieurs techniciens, coordonnées
+différentes par agence/technicien). `CorrespondantLocal` (P4-L5) répond
+au besoin immédiat avec un seul correspondant par couple
+(Prestataire, Établissement). Ce futur lot irait plus loin si le besoin
+se confirme : plusieurs correspondants par établissement, fonctions,
+téléphones directs par personne, notion d'agence — vient compléter
+`CorrespondantLocal`, ne le remplace pas.
+
+Nécessite : nouveau modèle Django, migration, formulaires, permissions,
+vues, recherche — à ouvrir seulement quand le besoin sera mûr
+(POLITIQUE-001), pas par anticipation. Non cadré, non numéroté tant que
+P4-L5 n'a pas donné de retour d'usage réel.

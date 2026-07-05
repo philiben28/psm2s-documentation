@@ -454,6 +454,94 @@ qui restent la source de référence pour le détail technique.
   et remplacement du champ texte libre du formulaire Contrat par une
   recherche parmi les prestataires existants — cadrage déjà posé plus haut
   dans cette section, inchangé.
+- **Décision d'architecture — modèle à trois niveaux Entreprise / Agence /
+  Contact (05/07/2026), pendant le cadrage de P4-L5.** L'exemple SOCOTEC
+  (plusieurs agences, plusieurs techniciens, coordonnées différentes par
+  agence/technicien) a révélé que le besoin réel est plus riche qu'un
+  simple CRUD sur `Prestataire` : trois niveaux d'information distincts —
+  l'entreprise (unique dans PSM2S), l'agence (coordonnées locales), le
+  correspondant/contact (personne physique, éventuellement rattaché à un
+  contrat précis).
+  **Rejeté explicitement** : laisser chaque établissement créer sa propre
+  fiche de contact/technicien pour le même correspondant. Ce serait
+  recréer, au niveau du contact, exactement le problème de duplication
+  que le référentiel `Prestataire` (P4-L3/P4-L4) cherche à éliminer au
+  niveau de l'entreprise (ex. « Jean Dupont », « Jean DUPONT »,
+  « J. Dupont » saisis séparément par plusieurs Directeurs).
+  **Décision d'architecture actée** : *le modèle `Prestataire` représente
+  une entreprise, pas une agence ni une personne.* Cette clarification
+  s'applique à toute évolution future du référentiel.
+  **Décidé pour P4-L5** : rester volontairement simple — une seule fiche
+  Prestataire (entreprise), le champ `contact_nom` existant faisant office
+  de « contact principal » (couvre l'essentiel des cas actuels, sans
+  nouveau modèle). Le modèle Agence/Contact à trois niveaux n'est **pas**
+  développé maintenant (impliquerait nouveau modèle, migrations,
+  formulaires, permissions, vues, recherche — hors périmètre de P4-L5).
+  Inscrit au backlog comme lot futur « Contact Partenaire » (cf.
+  `PRODUCT_BACKLOG.md`), à ouvrir seulement quand le besoin sera mûr —
+  cohérent avec POLITIQUE-001.
+- **Révision du cadrage P4-L5 — modèle à deux niveaux Mémoire de
+  l'organisation / Mémoire de l'établissement (05/07/2026), remplace la
+  décision « `contact_nom` suffit » ci-dessus.** En creusant l'exemple
+  SOCOTEC (plusieurs agences, plusieurs techniciens, coordonnées propres à
+  chacun), il est apparu qu'un seul champ `contact_nom` sur `Prestataire`
+  ne suffit pas : deux établissements différents ont besoin de garder,
+  chacun, leur propre correspondant (nom, téléphone, email, notes libres —
+  « toujours appeler après 8h30 », « passe le mardi »), sans que cette
+  information soit partagée ni écrasée par un autre établissement.
+  **Rejeté explicitement** : laisser chaque établissement créer sa propre
+  fiche de contact pour le même prestataire sans structure dédiée —
+  recréerait la duplication (Jean Dupont / Jean DUPONT / J. Dupont) que le
+  référentiel `Prestataire` cherche à éliminer.
+  **Décision d'architecture actée** : nouvel objet `CorrespondantLocal`,
+  un par couple (`Prestataire`, `Etablissement`) — la mémoire opérationnelle
+  d'un établissement avec ce prestataire (« le Post-it »), strictement
+  distincte de la mémoire de l'organisation (`Prestataire` = référentiel
+  partagé, entreprise uniquement, inchangé). Chaque établissement gère
+  librement le sien ; jamais visible par un autre établissement (sauf
+  admin/responsable_securite, `peut_tout_voir`, cohérent avec le reste de
+  PSM2S).
+  **Décision d'ergonomie** : une seule fiche visible côté utilisateur —
+  le Directeur ne doit jamais avoir conscience qu'il existe deux objets
+  distincts en base. L'écran « Nouveau partenaire » combine la création du
+  référentiel (si le prestataire n'existe pas encore, dédoublonné via
+  `get_or_create_normalise` comme aujourd'hui) et son propre correspondant
+  local, en une seule soumission. Point d'entrée toujours scopé à un
+  établissement (URL `/etablissement/<etab_pk>/partenaire/nouveau/`, même
+  motif que `nouveau_contrat`) — jamais depuis `liste_prestataires`
+  (écran transverse, pas rattaché à un établissement). Pour un prestataire
+  déjà référencé, un encart « Mon correspondant » est ajouté directement
+  sur `detail_prestataire`, avec son propre point d'édition.
+  **Permissions, simplifiées par cette séparation** : modification du
+  référentiel partagé réservée à admin/responsable_securite une fois créé
+  (nouveau décorateur, cf. code) ; création d'un nouveau prestataire
+  (avec son correspondant local) ouverte à tout `gestionnaire_requis`,
+  comme aujourd'hui ; correspondant local géré librement par
+  l'établissement concerné (`verifier_acces_etablissement`, même
+  garde-fou que partout ailleurs). Plus besoin de la règle conditionnelle
+  envisagée initialement (« admin seul si le prestataire est partagé par
+  plusieurs établissements ») : elle disparaît, remplacée par cette
+  séparation nette des deux objets.
+  **Feu Vert accordé (05/07/2026).**
+- **Renumérotation Phase 4** (05/07/2026, conséquence directe de la
+  révision ci-dessus) : **P4-L5** = gestion complète d'un partenaire
+  (référentiel + correspondant local, un seul écran, décrit ci-dessus).
+  **P4-L6** = suggestions intelligentes (remplacement du champ texte libre
+  du formulaire Contrat par une sélection parmi les prestataires existants,
+  détection de doublons) — anciennement une partie de l'ancien P4-L5.
+  **P4-L7** = Widget Directeur (les actions prioritaires), non cadré,
+  renuméroté depuis l'ancien candidat « suggestion proactive » P4-L6.
+  Le futur « Contact Partenaire » (plusieurs correspondants, niveau
+  Agence) reste au backlog, non numéroté, et vient maintenant compléter
+  `CorrespondantLocal` plutôt que le remplacer.
+- **P4-L5 — développé, testé, migration appliquée (05/07/2026)** :
+  192/192 tests verts (179 existants + 13 dédiés — permissions référentiel
+  vs correspondant local, périmètre par établissement, dédoublonnage à la
+  création, non-duplication du couple prestataire/établissement,
+  affichage filtré sur la fiche). Nouvelle table `CorrespondantLocal`,
+  aucune donnée existante à transformer. Reste à déployer sur formation
+  (`PROC-002`, avec l'étape migration de `PROC-001`) et à vérifier avant
+  clôture formelle.
 
 ---
 

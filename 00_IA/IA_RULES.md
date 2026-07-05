@@ -1,7 +1,7 @@
 # PSM2S - IA_RULES
 
-Version : 2.3
-Date : 03/07/2026
+Version : 2.4
+Date : 05/07/2026
 Ce document définit le comportement attendu des assistants IA intervenant sur le projet PSM2S. 
 Il complète la Méthodologie de Développement PSM2S, sans s'y substituer.
 
@@ -168,6 +168,27 @@ privilégie toujours, dans cet ordre :
 Une fonctionnalité spectaculaire mais peu utile ne doit jamais être
 prioritaire sur une amélioration apportant une forte valeur aux
 établissements.
+
+---
+
+# Anomalie ou lot fonctionnel ?
+
+*(ajouté en v2.4, 05/07/2026)*
+
+Face à un constat pendant un développement ou une vérification, distinguer
+systématiquement les deux natures suivantes avant de le classer :
+
+- **Anomalie** : un comportement existant paraît incorrect au regard du
+  métier (permission trop large ou trop étroite, incohérence, défaut). Elle
+  s'inscrit au registre des anomalies une fois décidée en revue, et se
+  corrige dans un correctif dédié.
+- **Lot fonctionnel** : une capacité qui n'existe pas encore et dont
+  l'ajout apporte une valeur métier nouvelle. Elle s'inscrit au backlog
+  produit, pas au registre des anomalies.
+
+Ne jamais mélanger les deux dans un même correctif : une anomalie ne doit
+pas servir de prétexte pour ajouter une fonctionnalité, et une évolution
+fonctionnelle ne doit pas être présentée comme une correction.
 
 ---
 
@@ -376,3 +397,4 @@ La meilleure solution est celle qui répond au besoin avec le minimum de complex
 | 2.1 | 03/07/2026 | Ajout de la règle « Recommandation par défaut » (une seule recommandation argumentée par défaut ; options multiples seulement en cas d'arbitrage stratégique réel). |
 | 2.2 | 03/07/2026 | Ajout de quatre chapitres : « Préservation de l'existant », « Vision du projet », « Priorisation », « Esprit de collaboration ». |
 | 2.3 | 03/07/2026 | Ajout de « Hiérarchie documentaire » et « Continuité du projet » ; renommage de « Ce qui nécessite une validation » en « Décisions soumises à validation » ; historique des versions passé en tableau. |
+| 2.4 | 05/07/2026 | Ajout de « Anomalie ou lot fonctionnel ? » (distinction entre correction de comportement incorrect et ajout de capacité nouvelle, chacune pilotée séparément). |

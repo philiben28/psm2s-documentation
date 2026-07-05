@@ -58,3 +58,28 @@ Alertes automatiques
 ## Priorité 5
 
 Assistant IA spécialisé
+
+---
+
+## Phase 4 — Candidats identifiés au-delà du backlog écrit
+
+### Gestion du référentiel Prestataires (écran CRUD)
+
+Objectif :
+
+Le référentiel `Prestataire` (P4-L3, 05/07/2026) n'a d'écran nulle part :
+il est auto-créé uniquement à partir du nom saisi dans le formulaire de
+contrat (`get_or_create_normalise`), qui ne renseigne que le nom. Les
+champs contact/téléphone/email/adresse/site web restent donc toujours
+vides en pratique — le référentiel n'est pas exploitable au-delà du nom.
+
+Fonctions attendues (à confirmer lors du cadrage du lot) :
+
+- Liste des prestataires.
+- Création / modification d'un prestataire (nom, contact, téléphone,
+  email, adresse, site web).
+- Pas une anomalie : évolution fonctionnelle logique après P4-L3, pas une
+  correction de comportement incorrect.
+
+Découvert : 05/07/2026, pendant la vérification fonctionnelle du
+correctif Contrats sur formation.

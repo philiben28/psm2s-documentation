@@ -30,6 +30,20 @@ Cycle de vie d'une entrée : `identifiée → décidée en revue → inscrite (O
   à traiter dans un lot d'affinage « cohérence métier » distinct du contrôle IDOR.
 - **Statut** : ouverte.
 
+### PERM-CREATION-ETAB — Permissions : création d'établissement ouverte au Directeur
+- **Nature** : cohérence métier des permissions (pas un IDOR — le contrôle
+  d'accès objet reste correct).
+- **Fichier / vue** : `registre/views.py` — `nouveau_etablissement`, décorée
+  `@gestionnaire_requis` (admin, responsable_sécurité, **directeur**).
+- **Description** : un Directeur peut créer un nouvel établissement, alors
+  que cela semble relever de l'administration de la plateforme plutôt que
+  du périmètre d'un Directeur (qui gère son/ses établissement(s) existants).
+- **Découvert** : 05/07/2026, pendant la vérification fonctionnelle du
+  correctif « Incohérence Interface/Permissions – Contrats » sur formation.
+- **Décision en revue (05/07/2026)** : documentée, à analyser puis corriger
+  dans un lot dédié — distinct de tout ce qui est en cours.
+- **Statut** : ouverte.
+
 ---
 
 ## Résolues

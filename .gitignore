@@ -5,6 +5,12 @@
 # d'environnement (cPanel Passenger), jamais dans un fichier committé.
 07_ Ressources/la derniere clé secret_key.txt
 
+# P5-L0 (19/09/2026) : anciennes clés SECRET_KEY de l'ex-production psm2s_v2,
+# confirmées révoquées (ne correspondent pas à la clé active de Formation).
+# Retirées du suivi Git, conservées uniquement sur l'archive locale.
+07_ Ressources/passenger_wsgi.py
+passenger_wsgi_ORIGINAL.py
+
 # Fichiers verrous Word (créés à l'ouverture d'un .docx)
 ~$*.docx
 ~$*.doc

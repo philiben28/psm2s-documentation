@@ -1,0 +1,122 @@
+le problemeTEXTE NARRATION - VERSION PROPRE POUR SYNTHESE VOCALE
+(ne pas coller les lignes en MAJUSCULES, ce sont juste des repères)
+
+============================================================
+ACCROCHE (0:00 - 0:20)
+============================================================
+
+Un contrôle électrique arrivé à échéance la semaine dernière. Un contrat de maintenance expiré sans que personne ne s'en aperçoive. Le numéro du technicien qui intervient sur votre ascenseur, perdu dans un mail de l'an dernier.
+
+Pour beaucoup de directions d'établissements médico-sociaux, la sécurité et la conformité se gèrent encore comme ça, au fil de l'eau, dans des classeurs et des tableurs qu'on espère à jour.
+
+P S M 2 S a été pensé pour changer ça.
+
+============================================================
+LE PROBLEME (0:20 - 0:45)
+============================================================
+
+Un établissement médico-social, c'est une quarantaine de contrôles réglementaires à suivre, incendie, électricité, ascenseurs, accessibilité, formations du personnel, parfois sur plusieurs bâtiments, avec plusieurs prestataires différents.
+
+La question n'est jamais est-ce qu'on doit le faire. C'est plutôt, est-ce qu'on sait, à l'instant où on se parle, ce qui est fait, ce qui ne l'est pas, et ce qui presse.
+
+============================================================
+PRESENTATION DE PSM2S (0:45 - 1:15)
+============================================================
+
+P S M 2 S, c'est un registre de sécurité numérique conçu pour les directions d'établissements médico-sociaux.
+
+Quatre idées simples le résument, anticiper les échéances, piloter au quotidien, prouver sa conformité, et automatiser ce qui peut l'être.
+
+Sérénité et maîtrise au quotidien, c'est exactement l'objectif.
+
+============================================================
+MODULE 1 - REGISTRE DE SECURITE ET ALERTES (1:15 - 2:15)
+============================================================
+
+Prenons l'IME Les Tilleuls. En un coup d'oeil, la direction voit l'état réel de sa conformité, en vert ce qui est à jour, en orange ce qui approche de l'échéance, en rouge ce qui doit être traité en priorité.
+
+Ici, par exemple, l'ascenseur du bâtiment principal est signalé en critique, plus de contrôle valide, échéance dépassée. Impossible de le manquer, impossible de l'oublier dans un classeur.
+
+Et là où un tableur reste muet tant que personne ne le consulte, P S M 2 S anticipe, cette vérification incendie arrive à échéance dans huit jours. La direction le sait avant que ça devienne un problème, pas après.
+
+[NOUVEAU BLOC]
+Et cette échéance, personne n'a besoin de la calculer à la main. Dès qu'un contrôle est enregistré comme réalisé, P S M 2 S calcule automatiquement la prochaine date, à partir de la périodicité réglementaire propre à chaque type de contrôle.
+
+[NOUVEAU BLOC]
+Et le jour d'un contrôle ou d'une visite de commission, tout le registre de sécurité de l'établissement s'exporte en PDF, en un clic, prêt à être présenté.
+
+============================================================
+MODULE 2 - CONTRATS ET REFERENTIEL PARTENAIRES (2:15 - 2:50)
+============================================================
+
+Deuxième pilier, les prestataires. Fini de chercher un numéro de téléphone dans une boîte mail de l'an dernier.
+
+Chaque prestataire a sa fiche, coordonnées, contrats en cours, et surtout le correspondant habituel de votre établissement, ici Julien Faure chez SOCOTEC, avec la note passe généralement le mardi matin. C'est la mémoire de l'établissement, disponible pour toute l'équipe, même si la personne qui gère habituellement ce contact est absente.
+
+============================================================
+MODULE 3 - CREER ET SUIVRE UN TICKET TRAVAUX (2:50 - 3:40)
+============================================================
+
+Quand un contrôle révèle un problème, ici l'ascenseur signalé en critique, un ticket travaux se crée en quelques clics, directement depuis la fiche de l'établissement. Un titre, une description, une priorité, une date cible, et éventuellement un coût estimé.
+
+[MODIFIE]
+Une fois créé, le ticket suit un circuit clair, devis demandé, validé, en cours, jusqu'à la clôture. Dès qu'un responsable est assigné, P S M 2 S lui envoie automatiquement un email, pas besoin de se connecter tous les jours pour découvrir qu'une fiche travaux l'attend.
+
+[NOUVEAU BLOC]
+Autre détail qui change tout sur le terrain, le factotum ou le prestataire peuvent joindre une photo directement au ticket, l'état avant intervention, puis la preuve une fois le problème résolu.
+
+Chaque intervention reste tracée, avec son coût réel une fois les travaux terminés. Ce n'est pas seulement pratique, c'est ce qui permet, le jour venu, de répondre en trente secondes à une question de commission de sécurité.
+
+============================================================
+MODULE 4 - LE ROLE FACTOTUM (3:40 - 4:10)
+============================================================
+
+Sur le terrain, ce n'est pas toujours la direction qui saisit les tickets ou suit les interventions au quotidien, c'est souvent l'agent technique, le factotum.
+
+P S M 2 S lui donne un accès dédié, avec quatre niveaux possibles, consultation seule, saisie des tickets et interventions, signature des interventions, ou accès complet. La direction choisit exactement jusqu'où déléguer, établissement par établissement.
+
+Ici, Karim, factotum de l'IME Les Tilleuls, peut consulter ses tickets et saisir une intervention, sans jamais avoir accès aux informations qui ne le concernent pas.
+
+============================================================
+MODULE 5 - LA SIGNATURE ELECTRONIQUE (4:10 - 4:40)
+============================================================
+
+Autre brique de confiance, la signature électronique. Chaque utilisateur habilité enregistre une fois sa signature dans son profil.
+
+Elle peut ensuite être apposée sur les documents officiels, le DUERP, le registre d'accessibilité, en un clic, avec la date et l'heure enregistrées automatiquement. Et parce que tout le monde ne doit pas pouvoir signer n'importe quoi, un administrateur définit précisément qui a le droit de signer quel type de document.
+
+============================================================
+MODULE 6 - COMMISSION DE SECURITE (4:40 - 5:10)
+============================================================
+
+Troisième pilier, prouver. Après une visite de la commission de sécurité, les prescriptions sont enregistrées directement dans P S M 2 S, avec leur statut et leur historique d'actions.
+
+Ici, la prescription sur l'extincteur est levée, justificatif à l'appui. Celle sur l'ascenseur reste en cours, liée directement au ticket travaux correspondant. Tout est connecté, plus besoin de recouper trois documents pour reconstituer l'histoire.
+
+============================================================
+VUE ADAPTEE A CHAQUE ROLE (5:10 - 5:35)
+============================================================
+
+Et parce que chaque rôle n'a pas besoin de voir la même chose, un responsable sécurité a une vue d'ensemble sur tous les établissements. Un directeur, lui, voit uniquement le sien. Un factotum, uniquement ses tickets. Même clarté, sans surcharge d'informations qui ne concernent pas la personne connectée.
+
+============================================================
+NOUVEAU MODULE - SECURITE ET HEBERGEMENT DES DONNEES (5:35 - 6:05)
+============================================================
+
+Un mot sur la sécurité. La connexion se fait par identifiant et mot de passe, avec des règles de robustesse imposées à la création du compte, et une connexion chiffrée de bout en bout.
+
+Les données sont hébergées en France, chez un hébergeur professionnel. Chaque établissement n'a accès qu'à ses propres informations, jamais à celles d'un autre site.
+
+============================================================
+CONCLUSION (6:05 - 6:30)
+============================================================
+
+[MODIFIE - "cet outil" au lieu de "PSM2S" pour eviter la repetition]
+Cet outil est encore en développement, construit pas à pas à partir des besoins réels du terrain, pas dans un bureau, loin des établissements qui l'utiliseront.
+
+P S M 2 S est conçu et commercialisé par PBCI-Conseils, à partir de trente-cinq euros par mois et par établissement.
+
+Si vous voulez voir à quoi ça ressemble sur votre propre organisation, une démonstration personnalisée peut être organisée en quelques minutes.
+
+[MODIFIE - retrait de "PSM2S" en double]
+Sérénité et maîtrise au quotidien.

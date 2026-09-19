@@ -4,6 +4,11 @@
 **Version :** 1.0  
 **Date :** 03/07/2026
 
+> **⚠️ Document historique (ajouté le 19/09/2026, P5-L0).** Ce document
+> date du 03/07/2026 et n'est plus à jour. La documentation de référence
+> actuelle commence par `Documentation/INDEX.md`. Le contenu ci-dessous
+> est conservé tel quel, à titre d'archive.
+
 ---
 
 # Bienvenue

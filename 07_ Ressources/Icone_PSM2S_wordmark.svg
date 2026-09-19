@@ -1,0 +1,43 @@
+<svg width="512" height="600" viewBox="0 0 512 600" xmlns="http://www.w3.org/2000/svg" role="img">
+<title>Icône et logotype PSM2S</title>
+<desc>Icône application PSM2S avec le mot PSM2S en dessous, pour usage marketing</desc>
+<defs>
+  <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%" stop-color="#5AA6E8"/>
+    <stop offset="55%" stop-color="#1E5FA8"/>
+    <stop offset="100%" stop-color="#0E2E5C"/>
+  </linearGradient>
+  <linearGradient id="shield" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%" stop-color="#1B4C8C"/>
+    <stop offset="100%" stop-color="#0A2647"/>
+  </linearGradient>
+  <linearGradient id="green" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%" stop-color="#8ED04A"/>
+    <stop offset="100%" stop-color="#4C9A2A"/>
+  </linearGradient>
+  <radialGradient id="gloss" cx="30%" cy="18%" r="65%">
+    <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.38"/>
+    <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+  </radialGradient>
+</defs>
+
+<rect x="16" y="16" width="480" height="480" rx="108" fill="url(#bg)"/>
+<rect x="16" y="16" width="480" height="480" rx="108" fill="url(#gloss)"/>
+
+<path d="M256 92 L358 128 V244 C358 322 312 376 256 406 C200 376 154 322 154 244 V128 Z"
+      fill="url(#shield)" stroke="#EAF3FF" stroke-width="7"/>
+
+<rect x="202" y="172" width="36" height="36" rx="6" fill="#EAF3FF"/>
+<rect x="238" y="172" width="36" height="36" rx="6" fill="#EAF3FF"/>
+<rect x="274" y="172" width="36" height="36" rx="6" fill="#EAF3FF"/>
+<rect x="212" y="216" width="88" height="14" rx="4" fill="#EAF3FF" opacity="0.85"/>
+
+<circle cx="356" cy="298" r="58" fill="url(#green)" stroke="#FFFFFF" stroke-width="7"/>
+<circle cx="356" cy="282" r="22" fill="#FFFFFF"/>
+<rect x="349" y="298" width="14" height="26" rx="4" fill="#FFFFFF"/>
+
+<circle cx="242" cy="384" r="50" fill="#0A2647" stroke="#FFFFFF" stroke-width="7"/>
+<path d="M220 384 L236 400 L266 366" stroke="#FFFFFF" stroke-width="11" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+<text x="256" y="558" text-anchor="middle" font-family="Arial, sans-serif" font-size="56" font-weight="700" fill="#123C6B">PSM2S</text>
+</svg>

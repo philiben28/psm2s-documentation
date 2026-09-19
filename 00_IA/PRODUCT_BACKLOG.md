@@ -114,3 +114,26 @@ Nécessite : nouveau modèle Django, migration, formulaires, permissions,
 vues, recherche — à ouvrir seulement quand le besoin sera mûr
 (POLITIQUE-001), pas par anticipation. Non cadré, non numéroté tant que
 P4-L5 n'a pas donné de retour d'usage réel.
+
+### Signature électronique des bons d'intervention (futur, non numéroté)
+
+Constat d'origine : en préparant le script de la vidéo de démonstration
+(24/08/2026), tentative de montrer un factotum niveau 3 ("Signature des
+interventions", cf. `Utilisateur.NIVEAU_FACTOTUM_CHOICES`) signer un
+ticket/intervention. Vérification du code : le type de document
+"Bon d'intervention" existe bien dans `DroitSignature.DOCUMENT_CHOICES`,
+mais aucune vue ni aucun bouton "Signer" n'a jamais été développé pour
+`TicketTravaux` / `Intervention` — seuls le DUERP et le Registre
+d'Accessibilité disposent réellement du bouton de signature aujourd'hui
+(cf. `views.py`, recherche `peut_signer`). Le niveau 3 factotum existe
+donc dans le modèle sans fonctionnalité correspondante à activer.
+
+Phil confirme le 24/08/2026 que ce sera nécessaire à terme (retour
+pendant la préparation de la démo vidéo) : le libellé "Signature des
+interventions" du niveau 3 doit correspondre à une action réelle,
+cohérent avec la logique déjà en place pour le DUERP (`DroitSignature`,
+`_copier_signature`, horodatage automatique).
+
+Non cadré, non numéroté : pas de découpage de lot ni de Feu Vert à ce
+stade — à ouvrir formellement (cadrage P4 ou phase suivante) quand ce
+sera le tour de ce lot dans les priorités.

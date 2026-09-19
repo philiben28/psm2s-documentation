@@ -34,6 +34,35 @@ concernée — pas de duplication entre les deux documents.
 - [ ] Racine de l'application (cPanel « Setup Python App ») : confirmée
       pour l'environnement cible.
 
+## Étape 0.2 — Vérification de l'environnement
+
+**Découvert le 05/07/2026 (P4-L3, resynchronisation formation)** : un
+fichier de settings spécifique à l'instance (`config/settings_formation.py`)
+peut surcharger silencieusement des valeurs sûres définies dans
+`settings.py` — constaté avec `DEBUG = True` codé en dur, jamais détecté
+faute d'avoir exécuté `check --deploy` sous le bon `DJANGO_SETTINGS_MODULE`.
+De même, le nom réel du fichier de base de données peut différer de la
+convention par défaut (`db.sqlite3`) sans que rien ne le signale a priori.
+
+**Avant toute sauvegarde ou migration**, sur toute instance dont
+`passenger_wsgi.py` fixe un settings dédié :
+- [ ] Identifier le module de settings réellement utilisé
+      (`cat passenger_wsgi.py`, valeur de `DJANGO_SETTINGS_MODULE`).
+- [ ] Vérifier le nom réel de la base de données configurée :
+      ```bash
+      DJANGO_SETTINGS_MODULE=<module> python manage.py shell -c \
+        "from django.conf import settings; print(settings.DATABASES['default']['NAME'])"
+      ```
+      Sauvegarder **ce** fichier, pas `db.sqlite3` par convention.
+- [ ] Vérifier que `DEBUG` est à `False` sur toute instance non destinée
+      au développement local :
+      ```bash
+      DJANGO_SETTINGS_MODULE=<module> python manage.py check --deploy
+      ```
+      `security.W018` ne doit jamais apparaître ; sinon, corriger
+      directement le fichier de settings spécifique à l'instance (jamais
+      via Git — c'est un fichier serveur, Étape 0).
+
 ## Étape 1 — Sauvegarde
 
 Avant toute modification (Étape 3 de la Méthodologie de Développement

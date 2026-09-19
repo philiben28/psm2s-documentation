@@ -567,6 +567,407 @@ qui restent la source de référence pour le détail technique.
 
 ---
 
+## Correctif post-P4-L5 — Signature électronique DUERP (24/08/2026)
+
+Découvert en préparant la vidéo de démonstration (compte `demo_directeur`
+tentant de signer le DUERP de démo créé pour le tournage) : `Server Error
+500` systématique sur `duerp_signer`, jamais testé en conditions réelles
+jusqu'ici. Deux bugs indépendants trouvés et corrigés dans `views.py`,
+diagnostiqués sans navigateur via `manage.py shell` + `RequestFactory`
+(même méthode que l'incident P4-L5 du 05/07/2026) :
+
+1. `_copier_signature` écrivait le fichier de signature vers un chemin
+   **relatif** (`'media/...'`) au lieu de `settings.MEDIA_ROOT` — ne
+   fonctionnait que par coïncidence en développement local (le répertoire
+   de travail du process n'est pas garanti identique à la racine du
+   projet sous Passenger).
+2. `duerp_signer` utilisait `models.Q(...)` sans que `models` soit
+   importé dans le fichier (ni localement) — `NameError` immédiat, quel
+   que soit l'environnement.
+
+Corrigé et déployé sur formation le 24/08/2026, vérifié par le
+diagnostic direct (`OK — statut réponse : 302`) puis par une signature
+réelle dans l'application. **À reporter sur l'instance production** —
+le bug n'est pas spécifique à formation, il touchera n'importe quel
+directeur/responsable tentant de signer un DUERP en production tant que
+le correctif n'y est pas déployé.
+
+---
+
+## Méthodologie de préparation des données de démonstration (28/08/2026)
+
+Constat d'origine : le jeu de données démo initial (P4, script `demo_video_seed.py`
+du 21/08/2026) avait été enrichi au fil de l'eau pendant le tournage d'une
+vidéo commerciale, sans audit préalable — deux doublons silencieux sont
+apparus (`VisiteCommission` et `Intervention`), causés par une clé
+`get_or_create` construite sur une **date relative** (`today + timedelta`)
+recalculée différemment à chaque exécution du script à des jours
+différents.
+
+**Décision de méthode (DT, validée)** : toute préparation ultérieure de
+données de démonstration suit désormais un processus en 4 étapes,
+jamais d'exécution directe :
+1. Audit en lecture seule de l'existant (script dédié, aucune écriture).
+2. État des lieux formel : ce qui est déjà exploitable, ce qui manque
+   réellement (pas de remplissage par défaut).
+3. Proposition détaillée avant toute écriture — pour chaque objet :
+   valeur actuelle, valeur proposée, justification, impact sur le
+   scénario vidéo.
+4. Exécution uniquement sur feu vert explicite, et jamais avant la date
+   réelle du tournage quand des échéances relatives sont en jeu (sinon
+   nouvelle dérive garantie).
+
+**Règle technique retenue** : dans un script de seed/correction
+idempotent, la clé de `get_or_create` ne doit **jamais** contenir une
+valeur calculée par rapport à `today` — utiliser un champ stable
+(titre, nom, année) comme clé, et ne mettre les dates relatives que
+dans les `defaults` (jamais recalculées sur un enregistrement déjà
+existant, ce qui est le comportement voulu).
+
+Appliqué le 28/08/2026 à deux scripts :
+- `correction_donnees_demo.py` : nettoyage des deux doublons identifiés
+  (conserve l'enregistrement le plus récent), recalcul des échéances de
+  3 contrôles des Tilleuls pour raconter un scénario crédible (une
+  échéance en retard, une proche, une à venir — pas un décalage
+  mécanique de toutes les dates), passage du niveau factotum de Karim
+  Belhadj à 3, affectation de Karim comme responsable du ticket
+  ascenseur.
+- `extension_quotidien_tilleuls.py` : 4 cas de maintenance quotidienne
+  (fontaines à eau, bande podotactile, éclairage, plomberie) pour
+  montrer que PSM2S couvre aussi le quotidien du bâtiment, pas
+  seulement les contrôles réglementaires. Nouveau prestataire fictif
+  « AMEB Multiservices » (artisan tous corps d'état), volontairement
+  distinct des organismes de contrôle réglementaire déjà en place. Un
+  cas volontairement laissé « en cours » (pas clôturé) pour montrer le
+  suivi d'une intervention non terminée, pas seulement des clôtures.
+
+`correction_donnees_demo.py` n'a pas été exécuté au moment de la rédaction
+de cette entrée — feu vert donné sur le principe, exécution prévue le jour
+du tournage. `extension_quotidien_tilleuls.py` a depuis été remplacé (voir
+entrée du 03/09/2026 ci-dessous) avant d'avoir été exécuté.
+
+**Point hors périmètre identifié pendant l'audit** : 5 établissements
+non liés à la démo (codes non préfixés `DEMO-`) coexistent dans la
+base formation. Confirmé fictifs par Phil le 28/08/2026, mais restent
+hors périmètre de l'environnement de démonstration — aucun script de
+démo ne doit jamais les référencer, y compris indirectement.
+
+---
+
+## Incident de sécurité — SECRET_KEY production exposée publiquement (03/09/2026)
+
+Découvert dès la première étape de vérification en conditions réelles de
+l'audit sécurité ouvert le 28/08/2026 (script `diagnostic_hebergement.sh`,
+lecture seule) : un fichier `Cle.txt` présent à la racine du dossier
+**formation** (donc servi publiquement, `Options -Indexes` désactivé mais
+aucune règle bloquant l'accès direct à un fichier connu) répondait
+**HTTP 200** sur `https://formation.psm2s.pbci-conseils.fr/Cle.txt`.
+
+Son contenu : une ancienne version de `passenger_wsgi.py` **de la
+production** (`/home/roda4402/psm2s_v2`, `config.settings`), avec
+`DJANGO_SECRET_KEY` écrite en clair dans le code (motif antérieur à la
+décision C2 — « SECRET_KEY sans fallback », Phase 2 — qui visait
+justement à sortir la clé du code source). Contrairement à ce que le
+commentaire de `passenger_wsgi.py` de formation laissait penser (« Lot
+C2 : plus aucun secret en clair »), la vérification en direct via cPanel
+(Setup Python App → `psm2s_v2` → Environment variables → aucune entrée)
+a confirmé que la production lisait encore sa clé secrète **écrite en
+dur dans son propre `passenger_wsgi.py`**, jamais migrée vers le
+mécanisme par variable d'environnement contrairement à formation.
+
+**Risque** : `SECRET_KEY` signe les sessions, les jetons CSRF et les
+liens de réinitialisation de mot de passe Django — une clé compromise
+permet en théorie de forger une session valide sans mot de passe.
+Gravité retenue : critique.
+
+**Corrigé le 03/09/2026, par Phil, en suivant une procédure guidée pas à
+pas** (pas de session Claude Code directe, aucun accès bash/SSH côté
+assistant durant tout l'incident) :
+1. Suppression de `Cle.txt` du dossier formation.
+2. Nouvelle clé générée via `get_random_secret_key()` (venv formation).
+3. `passenger_wsgi.py` de **production** édité en local (FileZilla +
+   Bloc-notes, avec copie de sauvegarde locale avant modification) pour
+   remplacer la valeur de `DJANGO_SECRET_KEY`.
+4. Redéploiement du fichier, redémarrage de l'application `psm2s_v2`
+   via cPanel.
+5. Vérifié : `https://psm2s.pbci-conseils.fr/` répond normalement après
+   redémarrage.
+
+**Point ouvert, non traité dans l'urgence** : la production n'est
+toujours pas passée au mécanisme par variable d'environnement (elle a
+seulement reçu une nouvelle valeur, toujours en dur dans le code) — un
+futur lot devra aligner `psm2s_v2/passenger_wsgi.py` sur le motif déjà
+en place côté formation, pour que ce type d'incident ne puisse plus se
+reproduire par nature. À inscrire au backlog technique.
+
+**Autres fichiers de sauvegarde/archives repérés dans le même dossier
+formation pendant ce diagnostic** (`db_formation.sqlite3`,
+`db.sqlite3`, plusieurs `.bak` et `.zip`, `backup_db.sh`) : **exposition
+confirmée également** (tous répondaient HTTP 200, base de données
+complète comprise, avec mots de passe hashés des comptes). **Corrigé le
+03/09/2026** par ajout d'une règle Apache dans `.htaccess` de formation :
+```
+<FilesMatch "(\.sqlite3|\.bak|\.zip|\.sh|\.log|\.sql)">
+    Require all denied
+</FilesMatch>
+```
+Vérifié : les 9 fichiers testés répondent désormais 404 (au lieu de
+200) ; l'application continue de fonctionner normalement. **Incident de
+méthode pendant la correction** : une première tentative via FileZilla +
+Bloc-notes Windows a échoué silencieusement — Notepad ne gère pas les
+fins de ligne Unix du fichier serveur, tout le bloc ajouté s'est
+retrouvé fusionné sur une seule ligne de commentaire, donc inactif (sans
+casser le site). Corrigé en éditant `.htaccess` directement en SSH via
+`cat >> .htaccess << 'EOF' ... EOF`, qui garantit des fins de ligne
+correctes. **Vérifié et corrigé également sur la production (`psm2s_v2`), même
+jour** : exposition confirmée plus large qu'en formation — `.htaccess`
+de production totalement vide (0 octet, aucune protection), fichiers
+exposés incluant `db.sqlite3` (base **actuelle** de production),
+`config/settings.py.bak`, `passenger_wsgi.py.bak`, et l'intégralité du
+dossier `backups/` (9 sauvegardes quotidiennes complètes,
+`db_2026-08-26` à `db_2026-09-03`). Corrigé par création d'un
+`.htaccess` (Options -Indexes + même règle `FilesMatch`) directement en
+SSH. Vérifié : tous les fichiers testés (bases, sauvegardes, `.bak`,
+et les fichiers `.py` eux-mêmes — `passenger_wsgi.py`,
+`config/settings.py`, `manage.py`) répondent désormais 404, y compris
+le listage du dossier `backups/`. Site de production confirmé
+fonctionnel après correction.
+
+**Bonne nouvelle découverte à cette occasion** : la production dispose
+déjà d'une sauvegarde automatique quotidienne fiable (cron `backup_db.sh`
+à 2h, 9 jours d'historique glissant observés) — point positif à intégrer
+tel quel dans la fiche de synthèse sécurité.
+
+**Investigation `DEBUG = True` sur production — cause identifiée
+(03/09/2026)** : `config/settings.py` déployé sur `psm2s_v2` n'est **pas**
+la version suivie par le dépôt Git ni celle déployée sur formation, mais
+une version ancienne, antérieure à toute la discipline de sécurité posée
+en Phase 2 — pas d'imports `get_env`/`get_env_bool`/`get_env_required`,
+`SECRET_KEY` avec un filet de secours faible en dur dans le code
+(`os.getenv('DJANGO_SECRET_KEY', 'django-insecure-remplacer-cette-cle-en-production')`,
+contraire à la décision C2), `DEBUG = True` en dur avec le commentaire
+« Passer à False en production réelle » jamais suivi d'effet, et une
+entrée `ALLOWED_HOSTS` corrompue (un lien Markdown `[www...](https://...)`
+collé tel quel au lieu du nom de domaine `www.psm2s.pbci-conseils.fr`).
+**Constat retenu** : la production n'a jamais reçu la mise à jour de
+sécurité appliquée à formation le 05/07/2026 (resynchronisation L3.1) ;
+les deux instances ont divergé bien au-delà d'un simple réglage isolé.
+Toute correction ligne par ligne aurait traité un symptôme sans régler
+la cause — la vraie solution serait une resynchronisation complète via
+`PROC-001`, un chantier à part entière, non entrepris dans l'urgence de
+cette session.
+
+**Décision — Mise à l'arrêt de l'instance production `psm2s_v2`
+(03/09/2026, validée par Phil)** : cette instance contenait des données
+réelles (créée pour une évaluation par un collègue, Guillaume, qui ne
+l'a en pratique jamais utilisée). Compte tenu (1) de données personnelles
+réelles en jeu, (2) d'un retard de sécurité substantiel jamais comblé,
+(3) d'un usage réel nul, la décision retenue n'est pas de corriger mais
+d'**arrêter le service**, plutôt que d'investir dans une resynchronisation
+pour un usage qui n'existe plus. Toute décision différente aurait
+nécessité de justifier le risque conservé au regard d'un bénéfice
+inexistant.
+**Exécuté** : archive complète créée (`archive_psm2s_v2_avant_arret_20260903.tar.gz`,
+code + base + médias), téléchargée en lieu sûr hors serveur, puis
+application arrêtée via cPanel Setup Python App. Vérifié : le site
+renvoie une page d'erreur générique, plus aucune donnée accessible.
+Rien supprimé — réversible si un besoin réel se présente un jour, en
+appliquant `PROC-001` avant toute remise en service.
+**Conséquence pour l'audit sécurité en cours** : les constats `DEBUG`,
+`ALLOWED_HOSTS` et `SECRET_KEY` avec filet faible concernant `psm2s_v2`
+sont neutralisés par l'arrêt du service, pas par une correction — à ne
+pas rouvrir sans redéployer proprement au préalable.
+
+**Incohérence relevée avec une décision antérieure** : l'entrée
+« Anomalies découvertes lors de la resynchronisation formation »
+(05/07/2026, ci-dessus) indique que `DEBUG=True` sur formation avait
+déjà été corrigé ce jour-là directement sur le serveur. Or la copie
+locale de `config/settings_formation.py` lue le 28/08/2026 pendant
+l'audit sécurité montre encore `DEBUG = True` en dur. Ce fichier étant
+volontairement **hors Git** (décision L3.1, fichiers spécifiques au
+serveur jamais versionnés), la copie locale peut être obsolète par
+rapport à l'état réel du serveur — à vérifier en direct avant de
+conclure quoi que ce soit, plutôt que de faire confiance à l'un ou
+l'autre des deux constats.
+
+---
+
+## Enrichissement tickets démo DEMO-TIL — 10 cas (03/09/2026)
+
+Remplace `extension_quotidien_tilleuls.py` (4 cas, jamais exécuté) par
+`enrichissement_tickets_demo_tilleuls.py` (10 cas), suite à une demande
+formelle avec cahier des charges détaillé par cas (créateur, responsable,
+priorité, prestataire, statut, coût). Même méthode que d'habitude :
+inspection en lecture seule d'abord (aucun doublon avec les 3 tickets
+réglementaires déjà présents, `AMEB Multiservices` n'existait pas encore),
+tableau récapitulatif proposé, arbitrages explicites validés par Phil
+(porte coupe-feu → externe AMEB ; stock d'entretien → à traiter sans
+intervention ; radiateur → mappé sur « clôturé », `TicketTravaux` n'ayant
+pas de statut « réalisé » séparé), puis exécution sur feu vert explicite.
+
+**Exécuté et confirmé le 03/09/2026** : 10 `TicketTravaux`, 8
+`Intervention` (aucune pour les cas « à traiter », cohérent avec rien
+n'ayant encore été fait), 1 `Prestataire` (AMEB Multiservices) et son
+`CorrespondantLocal` créés. Chronologie sur 5 semaines (J-35 à J-1),
+6 tickets clôturés, 2 en cours (fuite sanitaire, porte coupe-feu — tous
+deux avec une intervention « planifiée » à venir), 2 à traiter (dont un
+très récent, J-1). Aucun compte, rôle, permission ni contrôle
+réglementaire touché ; les 3 tickets réglementaires déjà présents
+inchangés.
+
+**Point technique retenu** : `TicketTravaux.date_creation` et
+`Intervention.date_creation` sont en `auto_now_add`, donc ignorés par
+`get_or_create()` au moment de la création — le script fixe la date
+réelle après coup via une mise à jour ciblée (`.filter(pk=...).update(...)`)
+pour obtenir une chronologie crédible plutôt que des dates de création
+toutes identiques au jour d'exécution.
+
+**AMEB Multiservices absent du référentiel Partenaires — analyse et
+décision (03/09/2026)** : `AMEB Multiservices` n'apparaissait pas dans
+`liste_prestataires` car cette vue (et surtout `get_prestataire_ou_404`,
+fonction de périmètre/IDOR) n'affichent/n'autorisent un prestataire que
+s'il a au moins un `Contrat` visible — `Intervention.prestataire` est un
+champ texte libre, jamais lié structurellement à `Prestataire` (choix
+délibéré de P4-L3, cf. plus haut). Analyse détaillée fournie : corriger
+uniquement l'écran de liste aurait cassé l'accès à la fiche AMEB pour un
+rôle Directeur (404, puisque `get_prestataire_ou_404` applique la même
+règle comme garde-fou d'accès, pas seulement d'affichage). **Décision de
+Phil** : ne pas toucher au code ni aux permissions pour un besoin de
+démo — créer à la place un contrat-cadre `CONV-AMEB-2026` (DEMO-TIL,
+sans type de contrôle ni montant fixe, notes explicites sur la nature
+« maintenance courante »). Exécuté et confirmé le 03/09/2026 (`Contrat`
+créé, rien d'autre modifié).
+
+**Question fournisseurs (Leclerc, Bricomarché, etc.) — tranchée pour
+l'instant (03/09/2026)** : `Prestataire` n'a aujourd'hui aucun champ de
+catégorie/type (vérifié dans `models.py`), contrairement à
+`TypeControle`/`Etablissement`. Introduire une distinction
+Contrôle/Maintenance/Fourniture serait une vraie évolution fonctionnelle
+(champ + migration), pas un ajustement de données. **Décidé** : hors
+périmètre de la démo actuelle, à ne considérer que dans le cadre d'une
+réflexion produit dédiée sur le périmètre de PSM2S — la base de
+démonstration reste volontairement à AMEB + APAVE + SOCOTEC. Principe
+retenu par Phil pour la suite : ne jamais ajouter une fonctionnalité
+uniquement pour la démonstration — la démo doit refléter ce que PSM2S
+sait réellement faire.
+
+**Doublon historique nettoyé au passage (03/09/2026)** : en consultant le
+résultat dans l'interface, Phil a repéré deux `Intervention` identiques
+sur le ticket réglementaire « Remplacement extincteur hall d'entrée »
+(24/07 et 27/07/2026, même montant, même description) — exactement le
+type de doublon déjà documenté (clé `get_or_create` construite sur une
+date relative, script initial relancé à deux jours différents). Vérifié
+en lecture seule puis supprimé (conservé le plus récent, 27/07).
+Confirme que ce même défaut, déjà identifié par l'audit du 28/08 et déjà
+couvert par `correction_donnees_demo.py` (non exécuté), peut aussi
+apparaître ailleurs dans les données DEMO-TIL restées de l'ancien seed —
+`correction_donnees_demo.py` reste donc pertinent et à exécuter avant le
+tournage plutôt que d'être considéré caduc.
+
+---
+
+## Chantier 1 — Adaptation tablette Android, usage terrain (07/09/2026)
+
+Ouvert après une analyse en lecture seule (`Documentation/02_Architecture/2026-09-07_Reflexion_Tablette_Vocabulaire.md`) ayant confirmé qu'aucune adaptation mobile n'existait dans le code (aucune `@media` dans `base.html`, sidebar fixe 224px, cibles tactiles 26-28px, formulaires en grille 2 colonnes fixe, `TicketTravaux.description` absent de tout formulaire malgré son existence dans le modèle).
+
+**Développé le 07/09/2026, sur le dépôt local (`Code-Source`), non déployé** :
+- `Templates/base.html` : sidebar en tiroir sous 900px (bouton menu fixe 44×44, overlay de fermeture, transition CSS), cibles tactiles portées à 44px (`.icon-btn-sm`, `.logout-btn`, `.btn`, `.nav-item`), règle de collapse `.form-row`/`.form-grid` en une colonne — placée délibérément **après** `{% block extra_style %}{% endblock %}` pour ne jamais être écrasée par la redéfinition locale de ces mêmes classes dans chaque template (mécanisme de cascade identifié pendant l'analyse préalable, confirmé fonctionner comme prévu).
+- `registre/forms.py` : `TicketTravauxForm` expose désormais `description` (facultatif, `Textarea`) ; `PieceJointeTicketForm` reçoit l'attribut `capture="environment"` sur le champ fichier, sans restriction `accept` — pour ne pas bloquer le dépôt de PDF (devis/factures) via le même champ.
+- `Templates/registre/nouveau_ticket.html`, `modifier_ticket.html` : champ description ajouté.
+- `Templates/registre/detail_etablissement.html` : bouton « Nouveau ticket » ajouté dans l'en-tête permanent (visible quel que soit l'onglet actif), plus un correctif responsive local — cette page utilise ses propres classes d'en-tête (`.detail-topbar`/`.detail-tabs`), distinctes de `.topbar`, découvertes en cours de développement et donc non couvertes par la règle globale.
+- `Templates/registre/tickets.html` : bug trouvé en cours de développement — deux boutons `.icon-btn-sm` avaient une taille imposée en style inline (`22px`), qui aurait rendu la règle globale de 44px inopérante (une règle en ligne l'emporte toujours sur une classe). Corrigé en retirant l'override inline.
+
+**Aucun fichier de vue, de permission ou de modèle touché.** Aucune migration. Aucune donnée de démonstration modifiée.
+
+**Non fait à ce stade, conformément au périmètre** : pas de test navigateur réel exécuté (pas d'accès navigateur/SSH côté assistant pendant ce développement) — vérification visuelle du code uniquement (relecture des fichiers modifiés, cohérence de la cascade CSS). Un test en conditions réelles (largeurs 1280/1024/800/768, tactile, sécurité par rôle) reste à faire par Phil après déploiement sur formation.
+
+**Validation en conditions réelles (07/09/2026)** : tests effectués par Phil sur formation aux 4 largeurs (1280/1024/800/768, navigateur desktop en mode responsive) et sur tablette tactile réelle (Surface Pro 10, en portrait/fenêtre réduite pour déclencher le seuil de 900px) — sidebar en tiroir, bouton menu, création de ticket confirmés fonctionnels. Diff Git relu intégralement par l'assistant et confirmé conforme au périmètre validé (les deux ajustements découverts en cours de développement — `detail_etablissement.html` et `tickets.html` — sont des complétions nécessaires des priorités déjà approuvées, pas un dépassement). Deux fichiers modifiés non liés (`registre/views.py`, correctif signature du 24/08/2026 non commité, et deux fichiers `signatures/*.jpeg`) identifiés dans le diff et confirmés étrangers à ce chantier.
+
+**Extension validée en cours de test réel — pièce jointe à la création du ticket (07/09/2026)** : test réel sur Surface Pro a révélé qu'un technicien ne pouvait pas joindre de photo lors de la création d'un ticket (l'ajout de pièce jointe n'existait que depuis l'écran « Modifier »). Analyse présentée (option minimale : rediriger vers l'ajout de pièce jointe après création ; option retenue : intégrer le champ directement dans « Nouveau ticket »). Implémenté en modification minimale :
+- `registre/views.py`, vue `nouveau_ticket` : lecture optionnelle de `request.FILES['piece_jointe_fichier']` après la création du ticket ; si présent, création directe d'un `PieceJointeTicket` (type déduit du `content_type`, `photo` ou `autre`). Le périmètre d'autorisation n'est pas re-vérifié séparément : la pièce jointe est rattachée au ticket qui vient d'être créé dans la même requête, donc déjà filtré par le mécanisme F9 (FORM-PERIMETRE) existant sur le champ `etablissement`.
+- `Templates/registre/nouveau_ticket.html` : ajout de `enctype="multipart/form-data"` sur le formulaire et d'un simple champ fichier optionnel (`capture="environment"`, cohérent avec `PieceJointeTicketForm`), sous le champ description.
+
+**Aucun modèle, aucune permission, aucune migration touchés.** La vue `ajouter_piece_jointe` (ajout après coup) et la classe `PieceJointeTicketForm` ne sont pas modifiées — la nouvelle pièce jointe à la création est créée directement (`PieceJointeTicket.objects.create(...)`), sans passer par ce formulaire, pour ne pas altérer son comportement `required` existant.
+
+**Vérification `capture="environment"` en conditions réelles (17/09/2026)** : testé par Phil sur 2 appareils.
+- iPhone 11 Pro (Safari) : bascule directement sur l'appareil photo — comportement optimal confirmé.
+- Surface Pro 10 (Edge, Windows) : le sélecteur ouvre l'explorateur de fichiers standard, sans raccourci caméra. Confirmé qu'il s'agit d'une limite du navigateur desktop, pas du code : l'attribut `capture` est scopé par le W3C aux navigateurs mobiles, les navigateurs desktop (Chromium/Edge) l'ignorent légitimement. Aucun correctif possible côté application. Sur Windows, le seul chemin reste : prendre la photo via l'app Caméra de Windows, puis la sélectionner comme un fichier classique. Non bloquant pour l'usage cible (tablette tactile mobile) ; assumé comme limite connue pour un usage sur poste Windows.
+
+---
+
+## Phase 5 — Contractualisation, tarification et continuité (ouverte le 17/09/2026)
+
+**P5-L1 — Contractualisation, tarification et périmètre** : analyse de
+l'existant et proposition d'architecture fonctionnelle réalisées
+(17/09/2026), en lecture seule, aucun développement. Confirmé : aucun
+modèle client/organisation n'existe, le modèle `Contrat` désigne
+exclusivement les contrats Prestataire (à ne pas confondre avec le futur
+contrat commercial PSM2S↔client), aucun mécanisme de tarif/avenant
+n'existe. Barème validé transmis par le DT (45/40/35€ selon engagement
+24/36/48 mois + maintenance 150€ dégressive). Architecture fonctionnelle
+proposée (Client, ContratClient, Avenant, calculs mensuel/annuel séparés)
+en attente de validation avant toute architecture technique. **Suspendu**
+le jour même au profit de P5-L0 (priorité continuité), non repris depuis.
+
+**P5-L0 — Continuité, sécurité et pérennité du projet** : audit complet
+en lecture seule (17/09/2026), puis repassage de contrôle (19/09/2026,
+aucun changement constaté entre les deux), puis clôture actée le
+19/09/2026 avec les actions suivantes :
+
+- **Git** : commande et instructions de commit/push transmises à Phil
+  pour le chantier tablette (base.html, forms.py, 4 templates, ajout
+  pièce jointe à la création) et les mises à jour documentaires de ce
+  jour, sur les deux dépôts GitHub (`psm2s-securite`,
+  `psm2s-documentation`) — l'assistant n'ayant pas d'accès shell
+  fonctionnel durant cette session, l'exécution et la confirmation
+  (hashes de commit, push réussi) restent à faire par Phil.
+- **Secrets** : vérifié qu'aucun code ne dépend de `Cle.txt` ni de
+  `la derniere clé secret_key.txt` (seules des mentions historiques dans
+  la documentation/scripts d'audit). Le mécanisme officiel
+  (`DJANGO_SECRET_KEY` en variable d'environnement, `get_env_required`,
+  sans valeur de secours) reste inchangé et confirmé comme seule source
+  active. Suppression des deux fichiers actée, à exécuter par Phil
+  (hors accès fichier de l'assistant).
+- **Formation — DEBUG** : `config/settings_formation.py` codait
+  `DEBUG = True` en dur, en violation du défaut sûr de `settings.py`
+  (anomalie déjà documentée dans `PROC-001` §Étape 0.2, réapparue).
+  Corrigé : la ligne est retirée, formation hérite désormais du même
+  comportement que tout le reste (`DEBUG=False` sauf `DJANGO_DEBUG=True`
+  explicite en environnement). Le développement local n'est pas affecté
+  (variable posée dans le shell local, jamais dans le fichier de config).
+  Vérification par `manage.py check --deploy` sous
+  `DJANGO_SETTINGS_MODULE=config.settings_formation` à faire par Phil
+  après déploiement du correctif sur le serveur.
+- **Documentation** : `POINT_DE_REPRISE.md` réécrit (état à jour,
+  redirige explicitement vers `INDEX.md` comme point d'entrée officiel,
+  au lieu de se présenter lui-même comme tel). `INDEX.md` mis à jour
+  (état actuel, `PROC-003` référencée, correction de la mention erronée
+  sur la disparition du dossier `Audits/`, note sur la suppression actée
+  des secrets locaux). Aucune nouvelle architecture documentaire créée.
+- **Hygiène** : suppression actée de deux fichiers étrangers au projet
+  dans `Documentation/04_Juridique/` (`ChatGPT Installer.exe`,
+  `Microsoft.Services.Store.winmd`) — à exécuter par Phil.
+- **Restauration** : `PROC-003_Restauration_PSM2S.docx` (déjà rédigée par
+  Phil) prise en compte et référencée dans `INDEX.md`. Aucun nouveau
+  système de sauvegarde créé — mécanismes existants documentés tels
+  quels (sauvegarde BDD côté serveur, JetBackup, copie ponctuelle
+  externe).
+- **Crash-test de reprise (19/09/2026)** : **crash-test validé sur
+  l'instance PSM2S Formation** — restauration sur un nouveau poste,
+  démarrage de l'application et validation fonctionnelle approfondie par
+  Phil réussis. Le test valide la procédure de reprise
+  (`PROC-003_Restauration_PSM2S.docx`) d'une instance PSM2S complète sur
+  un nouvel environnement — validation pratique concrète de la capacité
+  de reprise du projet. Le test n'a pas porté sur toutes les
+  configurations possibles de clients futurs.
+- **Core/Variantes (L3.4.4)** : statut fait évoluer de « proposition en
+  attente » à **« VALIDÉE COMME ORIENTATION ARCHITECTURALE —
+  IMPLÉMENTATION DIFFÉRÉE »**. Aucun développement réalisé dans P5-L0 sur
+  ce sujet — décision d'orientation actée uniquement, cohérente avec
+  `POLITIQUE-001`.
+
+---
+
 *Fichier vivant : ajouter une entrée par décision structurante validée en
 revue, sous la phase correspondante. Ne pas y consigner de décision non
 actée.*

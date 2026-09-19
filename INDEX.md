@@ -11,6 +11,15 @@ fichier n'y était déposé). `Documentation/` étant désormais versionnée
 l'historique Git. Les anciens dossiers `Audits/` et `Developpements/`
 disparaissent une fois vidés de leur contenu.
 
+**État actuel (mise à jour 19/09/2026)** : Phases 1 à 4 closes ou en cours
+d'enrichissement (voir `00_IA/DECISIONS.md` pour le détail par lot).
+Phase 5 ouverte — P5-L0 (Continuité, sécurité et pérennité) clos ce jour ;
+P5-L1 (Contractualisation, tarification et périmètre) en analyse
+fonctionnelle, développement non commencé. Nota : le dossier `Audits/` à
+la racine, que cette page annonçait comme amené à disparaître, a reçu un
+nouveau document le 28/08/2026 (audit sécurité) — il reste donc actif,
+cette page est corrigée en conséquence.
+
 ## 00_IA — Gouvernance et vision
 
 | Document | Rôle |
@@ -55,13 +64,16 @@ procédure d'ouverture d'un nouveau client, captures d'écran de démonstration.
 
 Audits techniques, comptes-rendus de correction (IDOR, sécurité de
 production), rapports de clôture de Phase 2 et de Lot 3.
+`POINT_DE_REPRISE.md` y vit toujours mais **n'est plus le point d'entrée** :
+il redirige explicitement vers cette page depuis le 19/09/2026.
 
 ## 07_ Ressources
 
 Ressources diverses : établissements virtuels de test, documents-source
 DUERP IAB. **Contient un secret en clair** (`la derniere clé secret_key.txt`)
-— exclu du dépôt Git de sauvegarde (`.gitignore`), à sortir vers un
-gestionnaire de secrets à terme.
+— exclu du dépôt Git de sauvegarde (`.gitignore`). Décision actée le
+19/09/2026 (P5-L0) : suppression après vérification qu'aucune configuration
+ne dépend de ce fichier (confirmé) — à exécuter par le Directeur Technique.
 
 ## 08_Procedures — Procédures d'exploitation
 
@@ -69,6 +81,7 @@ gestionnaire de secrets à terme.
 |---|---|
 | `08_Procedures/PROC-001_Deploiement_Plateforme_PSM2S.md` | Déploiement (nouvelle instance ou mise à jour) |
 | `08_Procedures/PROC-002_Maintenance_Instance_Client_PSM2S.md` | Correctif ciblé sur une instance déployée |
+| `08_Procedures/PROC-003_Restauration_PSM2S.docx` | Restauration d'une instance PSM2S — validée par crash-test le 19/09/2026 (voir `POINT_DE_REPRISE.md`) |
 | `08_Procedures/DEPLOIEMENT_o2switch.md` | Référence technique o2switch (variables, checklist) |
 
 ---

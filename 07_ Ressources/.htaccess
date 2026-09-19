@@ -1,0 +1,25 @@
+########################################################################
+# ATTENTION
+# Ce bloc est généré pour CET environnement par cPanel / CloudLinux.
+# Les chemins ci-dessous sont spécifiques au serveur.
+# Ne jamais les copier dans le dépôt Git.
+########################################################################
+
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION BEGIN
+PassengerAppRoot "/home/roda4402/formation.psm2s.pbci-conseils.fr"
+PassengerBaseURI "/"
+PassengerPython "/home/roda4402/virtualenv/formation.psm2s.pbci-conseils.fr/3.9/bin/python"
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION END
+
+# PSM2S — .htaccess (durcissement Apache, lot C3-1)
+# Complète les directives Passenger ci-dessus (générées par cPanel/CloudLinux
+# — ne jamais les supprimer ni les modifier).
+
+# Désactive le listing des répertoires (aucune énumération de fichiers).
+Options -Indexes
+
+# ── Desserte des médias — NE PAS bloquer /media au niveau Apache ──
+# Depuis C3-1, /media est servi EXCLUSIVEMENT par Django (vue `media_protegee`,
+# authentification + contrôle de périmètre). Passenger étant en amont de
+# l'application, une règle « Deny /media » renverrait un 403 AVANT que Django ne
+# traite la requête et casserait l'accès légitime aux documents.# ── Blocage des fichiers sensibles / sauvegardes (durcissement, 03/09/2026) ──# Empeche le telechargement direct de fichiers qui ne doivent jamais etre# servis publiquement (bases de donnees, sauvegardes, fichiers de config# de secours). Ne touche ni /media ni les fichiers .py normaux de l'appli.<FilesMatch "(\.sqlite3|\.bak|\.zip|\.sh|\.log|\.sql)">    Require all denied</FilesMatch>

@@ -914,13 +914,12 @@ en lecture seule (17/09/2026), puis repassage de contrôle (19/09/2026,
 aucun changement constaté entre les deux), puis clôture actée le
 19/09/2026 avec les actions suivantes :
 
-- **Git** : commande et instructions de commit/push transmises à Phil
-  pour le chantier tablette (base.html, forms.py, 4 templates, ajout
-  pièce jointe à la création) et les mises à jour documentaires de ce
-  jour, sur les deux dépôts GitHub (`psm2s-securite`,
-  `psm2s-documentation`) — l'assistant n'ayant pas d'accès shell
-  fonctionnel durant cette session, l'exécution et la confirmation
-  (hashes de commit, push réussi) restent à faire par Phil.
+- **Git** : commit et push confirmés par Phil sur les deux dépôts GitHub
+  (l'assistant n'ayant pas d'accès shell fonctionnel durant cette
+  session) : `psm2s-securite` (chantier tablette + ajout pièce jointe à
+  la création, commit `d0051ef`) et `psm2s-documentation` (mises à jour
+  documentaires du jour, 49 fichiers, commit `3cb98d2`). Arbres propres
+  confirmés sur les deux dépôts à ce stade.
 - **Secrets** : vérifié qu'aucun code ne dépend de `Cle.txt` ni de
   `la derniere clé secret_key.txt` (seules des mentions historiques dans
   la documentation/scripts d'audit). Le mécanisme officiel
@@ -1019,6 +1018,32 @@ n'étant plus utilisé pour ce projet.
   dans une sauvegarde ;
 - ne pas réécrire l'historique Git à ce stade ;
 - aucune valeur de jeton n'est inscrite dans cette documentation.
+
+## Clôture formelle — P5-L0 (19/09/2026)
+
+Toutes les actions de clôture (Git, secrets, Formation, documentation,
+hygiène, restauration, crash-test, Core/Variantes) et le volet sécurité
+complémentaire (anciennes clés `passenger_wsgi*`, jeton GitHub) sont
+désormais exécutés et vérifiés :
+
+- **Jeton GitHub** : révocation confirmée par Phil le 19/09/2026.
+- **Retrait du suivi Git** : fichier du jeton retiré de `Code-Source`
+  (commit `5b41ed6`, poussé) ; les deux fichiers `passenger_wsgi*`
+  retirés de `Documentation` (commit `d590cd0`, poussé), complété par un
+  commit de finalisation du `.gitignore` (commit `9fa3b22`, poussé).
+- **Arbres Git propres, confirmés sur les deux dépôts** :
+  `psm2s-securite` à `5b41ed6`, `psm2s-documentation` à `9fa3b22`.
+- **Correctif `DEBUG=False` de `settings_formation.py`** : vérifié
+  **effectivement déployé sur le serveur Formation** (pas seulement dans
+  le dépôt) — `manage.py check --deploy` sous
+  `DJANGO_SETTINGS_MODULE=config.settings_formation` ne signale plus
+  `security.W018`. Les 4 avertissements restants (W004 HSTS, W008 SSL
+  redirect, W012/W016 cookies sécurisés) sont le chantier déjà connu et
+  volontairement reporté **L3.1a — Durcissement HTTPS formation**
+  (04/07/2026), hors périmètre de P5-L0. Site Formation confirmé
+  accessible et fonctionnel après vérification.
+
+**P5-L0 est déclaré formellement clos le 19/09/2026.**
 
 ---
 

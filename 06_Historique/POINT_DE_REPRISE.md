@@ -71,6 +71,21 @@ créé) : sauvegarde de la base de données côté serveur, JetBackup
   **VALIDÉE COMME ORIENTATION ARCHITECTURALE — IMPLÉMENTATION DIFFÉRÉE**
   (aucun développement réalisé, décision d'orientation actée).
 
+## P5-L0 — Volet sécurité complémentaire et clôture formelle (19/09/2026)
+
+En complément des actions ci-dessus, découverte et traitement de deux
+autres éléments sensibles pendant le contrôle final : anciennes valeurs
+`SECRET_KEY` dans deux fichiers historiques (`passenger_wsgi.py`,
+`passenger_wsgi_ORIGINAL.py`, confirmées révoquées par comparaison
+d'empreintes) et un jeton d'accès GitHub exposé (révoqué par Phil sur
+GitHub). Détail complet et décisions : `00_IA/DECISIONS.md`.
+
+**P5-L0 est formellement clos le 19/09/2026.** Arbres Git propres et
+poussés sur les deux dépôts (`psm2s-securite` à `5b41ed6`,
+`psm2s-documentation` à `9fa3b22`). Correctif `DEBUG=False` vérifié
+effectivement déployé sur le serveur Formation (`check --deploy` sans
+`security.W018`), site confirmé accessible.
+
 ## Rappels techniques toujours valables
 
 - Poser `DJANGO_SECRET_KEY` avant toute commande Django en local

@@ -966,6 +966,60 @@ aucun changement constaté entre les deux), puis clôture actée le
   ce sujet — décision d'orientation actée uniquement, cohérente avec
   `POLITIQUE-001`.
 
+### Sécurité — anciennes clés présentes dans des fichiers historiques (19/09/2026)
+
+Lors de la revue de continuité P5-L0, deux fichiers historiques
+(`passenger_wsgi.py` et `passenger_wsgi_ORIGINAL.py`) contenaient
+d'anciennes valeurs de `SECRET_KEY` provenant de l'ancienne instance de
+production `psm2s_v2`.
+
+Vérification effectuée le 19/09/2026 (comparaison d'empreintes SHA-256,
+sans jamais afficher ni comparer de valeur en clair) : ces valeurs ne
+correspondent pas à la clé actuellement utilisée par l'instance
+Formation. L'ancienne instance de production `psm2s_v2` ayant été
+décommissionnée le 03/09/2026, aucune clé active de cette instance n'est
+actuellement en service.
+
+**Décision :**
+- retirer ces deux fichiers de l'état suivi du dépôt (`git rm --cached`,
+  chemins ajoutés au `.gitignore`) ;
+- conserver les fichiers dans l'archive historique locale (ancien PC)
+  pour préserver la traçabilité ;
+- ne pas réécrire l'historique Git à ce stade ;
+- considérer les anciennes clés comme révoquées et non utilisables ;
+- aucune valeur de clé ni empreinte n'est inscrite dans cette
+  documentation.
+
+### Sécurité — jeton d'accès GitHub exposé, révoqué (19/09/2026)
+
+Lors du même scan de sécurité, un fichier `Jeton généré pour l'API Github
+le 05-06-2026.txt` (format de jeton personnel GitHub réel) a été repéré à
+la racine du dépôt `Code-Source`. Vérification par
+`git log --all --full-history` : le fichier a été suivi et poussé sur
+GitHub via deux commits de juin 2026 (`1f5cd811`, `69d63342`). Une copie
+identique existe également dans l'archive historique
+`archive_psm2s_v2_avant_arret_20260903.tar.gz` (dépôt
+`psm2s-documentation`), provenant de la même origine (ancienne production
+`psm2s_v2`) — inspection de la liste des fichiers de l'archive
+uniquement, aucun contenu extrait ni affiché.
+
+**Révocation confirmée par Phil le 19/09/2026** (GitHub, Developer
+settings → Personal access tokens). Aucun nouveau jeton généré, l'accès
+n'étant plus utilisé pour ce projet.
+
+**Décision :**
+- retirer le fichier `Jeton généré pour l'API Github le 05-06-2026.txt`
+  du suivi Git du dépôt `Code-Source` (`git rm --cached`), chemin ajouté
+  au `.gitignore` du dépôt ;
+- conserver le fichier sur l'ancien PC (aucune suppression physique) ;
+- conserver telle quelle la copie présente dans l'archive
+  `archive_psm2s_v2_avant_arret_20260903.tar.gz` — une archive historique
+  de production est censée contenir l'état réel de l'époque ; la
+  révocation du jeton neutralise le risque indépendamment de sa présence
+  dans une sauvegarde ;
+- ne pas réécrire l'historique Git à ce stade ;
+- aucune valeur de jeton n'est inscrite dans cette documentation.
+
 ---
 
 *Fichier vivant : ajouter une entrée par décision structurante validée en

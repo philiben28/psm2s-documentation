@@ -1004,6 +1004,75 @@ code engagé. Deux points techniques restent ouverts avant développement :
 mouvements de bâtiment explicites ou implicites, et mode de calcul de la
 date anniversaire de maintenance.
 
+**P5-L1 — Interaction création établissement / périmètre contractuel
+(19/09/2026, question de Phil).** `nouveau_etablissement` (vue
+existante, `@gestionnaire_requis` — accessible aussi au directeur) reste
+inchangée dans son périmètre technique, mais affichera désormais un
+message informatif signalant que l'établissement n'est pas encore dans
+le périmètre contractuel, avec un raccourci de création du mouvement de
+périmètre réservé aux utilisateurs habilités (admin/responsable_securite/
+gestionnaire_contractuel). **Aucune pré-validation bloquante** — cohérent
+avec la règle « jamais de blocage, toujours un signal » déjà retenue
+partout ailleurs dans ce lot. Détail dans
+`2026-09-19_P5-L1_Architecture_Technique_Contractualisation.md` §4.4.
+
+**Révisée le 19/09/2026, voir entrée suivante** — le « raccourci de
+création du mouvement de périmètre » ci-dessus est remplacé par un
+workflow de demande (`DemandeAvenant`). Entrée conservée pour
+l'historique, ne plus s'y référer pour l'implémentation.
+
+**P5-L1 — Introduction de `DemandeAvenant` (19/09/2026), révise le point 5
+et le §4.4 ci-dessus.** Proposition initialement soumise par Phil à
+partir d'une réflexion de ChatGPT, discutée avec l'assistant, puis
+validée par Phil avec ajustements. Décisions actées :
+
+- Un troisième objet, `DemandeAvenant`, s'intercale entre la
+  constatation d'un changement de périmètre (ex. création d'un
+  établissement) et son application effective. `ContratCommercial`
+  reste l'objet du contrat ; `DemandeAvenant` devient l'objet de
+  workflow ; `MouvementPerimetre` reste exclusivement la source de
+  vérité des changements effectivement appliqués — **jamais transformé
+  en objet hybride** (raison explicite du choix d'un objet séparé
+  plutôt que d'un statut ajouté à `MouvementPerimetre`).
+- Toute modification de périmètre passe obligatoirement par une
+  `DemandeAvenant`. Une demande validée génère les `MouvementPerimetre`
+  correspondants (un par établissement/bâtiment concerné). Une demande
+  rejetée ne modifie jamais le périmètre et n'est jamais lue par le
+  calcul de périmètre.
+- **Trois statuts seulement** : `EN_ATTENTE`, `VALIDEE`, `REJETEE` — pas
+  de `DEMANDE`/`A_VALIDER` distincts, pas de `APPLIQUEE` (la présence
+  des `MouvementPerimetre` liés en est la preuve).
+- **Qui fait quoi** : créer un établissement et déclencher une
+  `DemandeAvenant` suivent le même droit (celui de
+  `nouveau_etablissement` : admin/responsable_securite/directeur) ;
+  valider ou rejeter reste réservé à admin/responsable_securite/
+  gestionnaire_contractuel ; **personne, aucune interface, ne peut
+  créer un `MouvementPerimetre` directement** — précision formelle du
+  point 5 initial.
+- **Aucun raccourci, même pour les rôles habilités** : un
+  admin/responsable_securite/gestionnaire_contractuel qui ajoute
+  lui-même un établissement passe par le même mécanisme (créer la
+  demande puis la valider dans le même parcours) — pour que l'audit
+  reste uniforme quel que soit qui agit.
+- **Écran d'impact chiffré**, affiché à la soumission et à la
+  validation (établissements/bâtiments avant→après, abonnement mensuel
+  avant→après, rappel 1er du mois suivant / pas de prorata) — la trace
+  de décision est portée par les champs `validateur`/`date_traitement`
+  de `DemandeAvenant`, pas par un champ de confirmation séparé.
+- **Pas de système de notifications pour P5-L1** (décision explicite,
+  pour ne pas gonfler le lot) — une liste des demandes en attente,
+  visible dans l'interface, suffit fonctionnellement. Notification
+  interne, email, rappels : candidats pour un lot ultérieur.
+
+Détail complet (modèles `DemandeAvenant`/`LigneDemandeAvenant`, écrans,
+permissions, tests) dans
+`2026-09-19_P5-L1_Architecture_Technique_Contractualisation.md` §1.3 et
+§4.4 (révisés), et dans
+`2026-09-19_P5-L1_Analyse_Architecture_Contractualisation.md` (D bis et
+révision du point 5). Toujours en conception, aucun code engagé.
+Prochaine étape annoncée par Phil : revue de l'architecture technique de
+`DemandeAvenant` avant d'autoriser le développement.
+
 **P5-L0 — Continuité, sécurité et pérennité du projet** : audit complet
 en lecture seule (17/09/2026), puis repassage de contrôle (19/09/2026,
 aucun changement constaté entre les deux), puis clôture actée le

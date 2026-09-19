@@ -9,6 +9,17 @@ ouverture du développement. Les 10 arbitrages fonctionnels sont
 considérés comme suffisamment définis par Phil (19/09/2026) ; deux
 points techniques restent ouverts (§5).
 
+**Révision du 19/09/2026 (postérieure à la première version de ce
+document)** : introduction d'un troisième objet, `DemandeAvenant`
+(§1.3), qui s'intercale entre la création d'un établissement et
+l'application effective d'un `MouvementPerimetre`. Décidé par Phil,
+sur une proposition initialement soumise par ChatGPT et discutée avec
+l'assistant. Modifie §1.2 (`MouvementPerimetre` n'est plus jamais créé
+directement), §4 (matrice de permissions) et §4.4 (remplace le
+« bouton raccourci » par le workflow de demande). Rien de ce qui
+précède ces ajouts n'est invalidé — voir chaque section pour le détail
+de ce qui change.
+
 ---
 
 ## 1. Modèles
@@ -63,6 +74,79 @@ des deux champs `etablissement`/`batiment` est renseigné, cohérent avec
 texte), la reconstruction du périmètre à une date donnée ne dépend donc
 **ni** de l'état actuel de l'établissement/bâtiment, **ni** même de son
 existence continue en base.
+
+**Révision (19/09/2026)** : `MouvementPerimetre` n'est **plus jamais
+créé directement** par une interface utilisateur — seule la validation
+d'une `DemandeAvenant` (§1.3) en produit. Champ supplémentaire :
+
+| `ligne_demande_origine` | `ForeignKey(LigneDemandeAvenant, on_delete=PROTECT, related_name='mouvement')` | Traçabilité complète : chaque mouvement remonte à la ligne de demande qui l'a produit, donc à la demande, son demandeur et son validateur. |
+
+### 1.3 `DemandeAvenant` et `LigneDemandeAvenant` (nouveau, 19/09/2026)
+
+Objet de **workflow**, distinct de `MouvementPerimetre` — c'est le
+point le plus important de cette révision : ne jamais transformer
+`MouvementPerimetre` en objet hybride (statut + fait appliqué mélangés).
+Une demande rejetée ou en attente n'est **jamais** lue par
+`perimetre_a_date` (§2) — seul `MouvementPerimetre` l'est.
+
+**`DemandeAvenant`** (l'en-tête de la demande) :
+
+| Champ | Type | Règle |
+|---|---|---|
+| `contrat_commercial` | `ForeignKey(ContratCommercial, on_delete=PROTECT, related_name='demandes')` | Le contrat concerné (le contrat actif au moment de la demande). |
+| `demandeur` | `ForeignKey(Utilisateur, on_delete=PROTECT, related_name='demandes_soumises')` | Qui a soumis — n'importe quel utilisateur disposant du droit de créer un établissement (`admin`/`responsable_securite`/`directeur`, même périmètre que `nouveau_etablissement`). |
+| `date_demande` | `DateTimeField(auto_now_add=True)` | |
+| `statut` | `CharField`, choices `EN_ATTENTE / VALIDEE / REJETEE` | **Trois statuts seulement** (tranché explicitement par Phil — pas de `DEMANDE`/`A_VALIDER` distincts, pas de `APPLIQUEE` : la présence des `MouvementPerimetre` liés en est la preuve). |
+| `validateur` | `ForeignKey(Utilisateur, null=True, blank=True, on_delete=SET_NULL, related_name='demandes_traitees')` | Rempli à la validation ou au rejet. |
+| `date_traitement` | `DateTimeField(null=True, blank=True)` | |
+| `commentaire_validation` | `TextField(blank=True)` | Motif, notamment en cas de rejet. |
+| `date_effet_souhaitee` | `DateField` | Pré-calculée au 1er du mois suivant, modifiable seulement vers une date ultérieure valide (jamais rétroactive). |
+
+**`LigneDemandeAvenant`** (une ligne par établissement/bâtiment
+concerné — même structure que `MouvementPerimetre`, en mode brouillon) :
+
+| Champ | Type | Règle |
+|---|---|---|
+| `demande` | `ForeignKey(DemandeAvenant, on_delete=CASCADE, related_name='lignes')` | `CASCADE` ici (contrairement à `MouvementPerimetre`) : une ligne de demande n'a aucune existence hors de sa demande, rien à protéger. |
+| `type_mouvement` | `CharField`, choices `AJOUT / RETRAIT` | |
+| `type_objet` | `CharField`, choices `ETABLISSEMENT / BATIMENT` | |
+| `etablissement` | `ForeignKey(Etablissement, null=True, blank=True, on_delete=PROTECT)` | |
+| `batiment` | `ForeignKey(Batiment, null=True, blank=True, on_delete=PROTECT)` | |
+
+À la validation d'une `DemandeAvenant` : une transaction crée un
+`MouvementPerimetre` par `LigneDemandeAvenant`, tous à la même
+`date_effet` (= `date_effet_souhaitee`), chacun référençant sa ligne
+d'origine. Répond du même coup à la question ouverte du §5.1 (mouvements
+de bâtiment explicites) : la structure en lignes de `DemandeAvenant`
+impose déjà cette granularité — créer un établissement avec 2 bâtiments
+produit une demande à 3 lignes, donc 3 `MouvementPerimetre` à la
+validation, cohérent avec la recommandation déjà faite.
+
+**Qui peut faire quoi** (remplace la ligne « MouvementPerimetre déclenché
+par admin/responsable_securite » de l'arbitrage initial du point 5) :
+
+| Action | Qui |
+|---|---|
+| Créer un établissement | Droit opérationnel existant (`admin`/`responsable_securite`/`directeur`) |
+| Soumettre une `DemandeAvenant` | Même utilisateur que ci-dessus |
+| Consulter les demandes | Selon périmètre — admin/responsable_securite/gestionnaire : toutes ; directeur : celles concernant ses établissements |
+| Valider une demande | `admin`/`responsable_securite`/`gestionnaire_contractuel` du contrat actif |
+| Rejeter une demande | Idem |
+| Créer directement un `MouvementPerimetre` | **Personne, aucune interface** |
+
+**Pas de raccourci, y compris pour les rôles habilités** : un
+admin/responsable_securite/gestionnaire_contractuel qui ajoute lui-même
+un établissement passe par exactement le même mécanisme — il crée une
+`DemandeAvenant`, puis la valide, dans le même parcours (les deux
+étapes peuvent s'enchaîner sans latence pour lui, mais l'objet
+`DemandeAvenant` existe toujours, pour que l'audit reste uniforme quel
+que soit qui a agi).
+
+**Notifications** : hors périmètre de P5-L1 (décision explicite de
+Phil, pour ne pas gonfler le lot). Une liste des demandes en attente,
+visible dans l'interface pour les rôles habilités, suffit
+fonctionnellement pour l'instant. Notification interne, email, rappels
+: candidats pour un lot ultérieur, non retenus ici.
 
 ---
 
@@ -159,6 +243,11 @@ admin/responsable_securite :
 | `directeur` non désigné gestionnaire | Limitée (§4.1) | Non |
 | Autres rôles (`factotum`, `prestataire`) | Non | Non |
 
+« Modification » se lit désormais, depuis la révision du 19/09/2026,
+comme « peut valider/rejeter une `DemandeAvenant` » — jamais comme
+« peut créer un `MouvementPerimetre` directement », possibilité qui
+n'existe pour personne (§1.3).
+
 ### 4.1 Portée de la consultation pour un directeur non gestionnaire
 
 Les champs globaux du contrat (durée, dates, statut, tarifs unitaires
@@ -236,6 +325,101 @@ lui sont jamais montrés.
   `directeur` non gestionnaire/autres), directeur non gestionnaire
   limité à son propre périmètre (jamais 403 brut, toujours 404,
   cohérent avec `get_etablissement_ou_404`).
+- **Vues/formulaires/tests supplémentaires pour `DemandeAvenant`**
+  (révision du 19/09/2026) : formulaire de soumission (pré-rempli
+  depuis le contexte de création d'établissement, ou saisi librement
+  pour un mouvement sans création d'établissement — ex. retrait seul) ;
+  liste des demandes en attente, scopée par rôle (§1.3) ; écran de
+  validation/rejet avec transaction créant les `MouvementPerimetre`
+  correspondants. Tests : une demande `REJETEE` ne produit jamais de
+  `MouvementPerimetre` et n'est jamais lue par `perimetre_a_date` ;
+  une demande `VALIDEE` produit exactement un `MouvementPerimetre` par
+  `LigneDemandeAvenant`, tous à la même `date_effet` ; un
+  demandeur-validateur peut traiter sa propre demande, mais l'objet
+  `DemandeAvenant` existe toujours (pas de chemin de code qui la
+  contourne) ; aucune vue ni endpoint ne permet de créer un
+  `MouvementPerimetre` sans passer par une `DemandeAvenant` validée ;
+  permissions de soumission (même périmètre que
+  `nouveau_etablissement`) vs permissions de validation/rejet
+  (`admin`/`responsable_securite`/`gestionnaire_contractuel` uniquement).
+
+---
+
+### 4.4 Interaction avec la création d'un établissement — révisée (19/09/2026)
+
+Question initiale de Phil : `nouveau_etablissement` (vue existante,
+`@gestionnaire_requis` — donc accessible à `admin`, `responsable_securite`
+**et `directeur`**, vérifié dans le code) crée un établissement
+opérationnel, sans lien avec le périmètre contractuel (arbitrage
+point 6 — séparation stricte). Un directeur peut recevoir un nouvel
+établissement de l'association et avoir le droit opérationnel de le
+créer sans avoir le pouvoir contractuel d'engager le contrat.
+
+**Décision retenue : ni simple message, ni pré-validation bloquante —
+un workflow de demande (`DemandeAvenant`, §1.3).** L'établissement est
+créé immédiatement, sans jamais être bloqué (cohérent avec la règle
+« PSM2S signale, ne bloque jamais une action opérationnelle pour une
+raison commerciale »). Ce qui change : la personne ne peut plus penser
+que le périmètre contractuel est modifié par le simple fait de créer
+l'établissement — elle doit explicitement soumettre une demande, dont
+l'application reste suspendue à une validation séparée.
+
+**Écran affiché au moment de la soumission** (quel que soit le rôle du
+demandeur) :
+
+```
+Modification du périmètre contractuel
+
+Vous ajoutez :
+  1 établissement
+  2 bâtiments
+
+Impact tarifaire
+  Abonnement actuel : 159 € HT/mois
+  Nouveau montant : 203 € HT/mois
+  Évolution : +44 € HT/mois
+
+La modification prendra effet le 1er du mois suivant.
+Un avenant à votre contrat sera nécessaire.
+
+[Annuler]  [Soumettre la demande]
+```
+
+Calcul « avant/après » : simulation pure, sans écriture en base —
+réutilise `perimetre_a_date` (§2) et `tarif_mensuel` (§3.2), en y
+ajoutant temporairement les lignes candidates (pas encore persistées).
+Aucune nouvelle fonction de calcul.
+
+**Écran affiché au moment de la validation**, pour
+admin/responsable_securite/gestionnaire_contractuel — mêmes chiffres,
+plus une confirmation explicite : « Je confirme la modification du
+périmètre et la préparation de l'avenant. » avant `[Valider]`/`[Rejeter]`.
+Ceci remplace la case à cocher envisagée dans une version antérieure de
+ce document : la trace de la décision est désormais portée par l'objet
+`DemandeAvenant` lui-même (`validateur`, `date_traitement`), pas par un
+champ de confirmation séparé.
+
+**Comportement selon le rôle du demandeur** :
+- **Tout demandeur** (admin/responsable_securite/gestionnaire_contractuel/
+  directeur) : voit l'écran de soumission ci-dessus, crée la
+  `DemandeAvenant` (statut `EN_ATTENTE`).
+- **Si le demandeur a aussi les droits de validation** : peut valider sa
+  propre demande dans la foulée (même écran de validation, pas de
+  raccourci qui contourne l'objet — §1.3).
+- **Si le demandeur n'a pas les droits de validation** (directeur non
+  gestionnaire) : la demande reste `EN_ATTENTE`, visible dans la liste
+  des demandes en attente pour les rôles habilités (pas de notification
+  automatique, décision explicite — §1.3).
+
+**Amélioration à noter pour le signal de dépassement (§3.4)** : tel que
+défini, il compare des compteurs (« 5 établissements réels contre 4 dans
+le périmètre »), ce qui ne dit pas *lequel* manque. Avec `DemandeAvenant`,
+ce signal devient secondaire pour le cas nominal (une demande en attente
+est déjà explicite et nominative) — il garde son utilité pour détecter
+un écart qui n'aurait jamais donné lieu à une demande (import de
+données, anomalie). À affiner en architecture de vue (pas un nouveau
+modèle) : lister les établissements/bâtiments concernés, pas seulement
+un écart chiffré.
 
 ---
 
@@ -257,6 +441,14 @@ correspondrait à 3 lignes ce jour-là. Détermine l'ergonomie du futur
 écran de saisie (un mouvement « ajouter un établissement » devra
 proposer d'ajouter dans la foulée ses bâtiments actifs, sans que ce
 soit automatique/implicite en base).
+
+**Reste techniquement ouvert, mais désormais cadré par la structure de
+`DemandeAvenant`/`LigneDemandeAvenant` (§1.3)** : cette structure impose
+déjà une ligne par objet, donc la question se réduit maintenant à une
+question d'ergonomie du formulaire de soumission (proposer
+automatiquement les bâtiments actifs de l'établissement, ou laisser
+l'utilisateur les ajouter un par un), plus à une question de modèle de
+données.
 
 ### 5.2 Date anniversaire de maintenance
 

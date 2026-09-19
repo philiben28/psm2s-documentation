@@ -94,6 +94,38 @@ nombre de bâtiments) — jamais stocké en dur, toujours recalculé, pour
 Rien de tout cela n'est un développement engagé ici : c'est la base de
 discussion pour l'architecture technique, après arbitrage de la section E.
 
+### D bis. Révision (19/09/2026) — un troisième objet, `DemandeAvenant`
+
+Discussion complémentaire, après validation des points 1 à 9 : la
+proposition à deux objets ci-dessus ne distinguait pas le **droit
+opérationnel** de créer un établissement (`admin`/`responsable_securite`/
+`directeur`, via `nouveau_etablissement`) du **pouvoir contractuel**
+d'engager l'association sur une modification du périmètre facturé. Un
+directeur peut légitimement créer un établissement dans PSM2S sans avoir
+le pouvoir juridique de modifier le contrat.
+
+**Décision** : un troisième objet, `DemandeAvenant`, s'intercale entre
+la constatation d'un changement de périmètre et son application
+effective. Il ne remplace ni `ContratCommercial` ni `MouvementPerimetre`
+— il en devient le sas de validation :
+
+```
+Création/modification d'un établissement (droit opérationnel)
+              ↓
+       DemandeAvenant (EN_ATTENTE)
+              ↓
+   validation (admin/responsable_securite/gestionnaire_contractuel)
+              ↓
+        VALIDÉE → MouvementPerimetre(s) créés (le fait appliqué)
+        REJETÉE → jamais pris en compte dans le calcul du périmètre
+```
+
+`MouvementPerimetre` reste exclusivement le registre des faits
+appliqués — aucune interface ne permet de le créer directement, il
+n'est produit qu'à la validation d'une `DemandeAvenant`. Détail complet
+(champs, statuts, permissions, écrans) dans le document d'architecture
+technique, §1.3 et §4.4 (révisés le 19/09/2026).
+
 ## E. Décisions métier restantes — à arbitrer (DT)
 
 Pour chaque point : options envisagées + recommandation. Décision à
@@ -146,6 +178,13 @@ prendre par Phil (DT/PO).
 - *Recommandation* : réservé à `admin`/`responsable_securite`
   (`peut_tout_voir`), jamais à un directeur d'établissement — c'est une
   décision commerciale, pas opérationnelle.
+- **Révision (19/09/2026)** : précisé, pas contredit — voir D bis. Le
+  droit de *soumettre* une demande de modification de périmètre suit le
+  droit de créer un établissement (donc ouvert au directeur), mais le
+  droit de *valider* (celui qui rend le mouvement effectif) reste
+  strictement réservé à `admin`/`responsable_securite`/
+  `gestionnaire_contractuel` — personne ne crée jamais directement un
+  `MouvementPerimetre`, même ces trois rôles.
 
 ### 6. Distinction actif / inactif
 

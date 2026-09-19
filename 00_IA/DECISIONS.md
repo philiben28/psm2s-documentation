@@ -909,6 +909,101 @@ proposée (Client, ContratClient, Avenant, calculs mensuel/annuel séparés)
 en attente de validation avant toute architecture technique. **Suspendu**
 le jour même au profit de P5-L0 (priorité continuité), non repris depuis.
 
+**P5-L1 — Reprise (19/09/2026)**, après clôture de P5-L0. Analyse
+re-vérifiée sur le code actuel et persistée cette fois en document
+(`03_Développement/2026-09-19_P5-L1_Analyse_Architecture_Contractualisation.md`
+— l'analyse du 17/09 ne l'avait jamais été). Proposition révisée compte
+tenu de L3.4.4 (mono-tenant validé) : pas de modèle `Client` séparé
+(redondant avec l'instance elle-même), `ContratCommercial` +
+`MouvementPerimetre` (noms provisoires) à la place. Dix points listés par
+Phil transmis pour arbitrage DT, avec options et recommandation pour
+chacun ; deux semblent déjà tranchés (périmètre en cours de contrat,
+articulation avec le contrat Prestataire). Toujours en lecture seule,
+aucun développement engagé.
+
+**P5-L1 — Arbitrages DT validés (19/09/2026)** : renouvellement =
+nouvelle ligne `ContratCommercial` (historique jamais modifié) ; durée
+d'engagement modifiable uniquement au renouvellement ; résiliation
+anticipée = statut `RESILIE` + date + motif, **aucune règle financière
+calculée par le logiciel** (reste des conditions contractuelles) ;
+`MouvementPerimetre` validé (type, objet, date d'effet, auteur,
+commentaire), un retrait ne supprime jamais l'objet métier ; séparation
+stricte actée entre `actif` (état opérationnel) et périmètre contractuel
+— **ne jamais automatiser l'un à partir de l'autre** ; 4 statuts
+`EN_ATTENTE/ACTIF/RESILIE/EXPIRE` validés, avec réserve technique
+explicite : les dates restent la source de vérité, le statut ne doit
+jamais s'en écarter silencieusement ; visibilité admin/responsable_securite
+uniquement, directeur exclu ; nom `ContratCommercial` validé, aucune
+relation avec `Contrat` (Prestataire).
+
+**P5-L1 — Architecture technique détaillée (19/09/2026)**, document
+`03_Développement/2026-09-19_P5-L1_Architecture_Technique_Contractualisation.md` :
+modèles `ContratCommercial`/`MouvementPerimetre` (champs, contraintes
+d'intégrité), fonction pure de reconstruction du périmètre à une date
+donnée (jamais dépendante de l'état courant des objets — champs
+snapshot + `on_delete=PROTECT`), règles de calcul (tarif mensuel,
+maintenance annuelle, signal de dépassement sans blocage, cohérence
+statut/dates), impacts vues/formulaires/permissions/tests. Deux points
+techniques restent à confirmer avant développement : mouvements de
+bâtiment explicites ou implicites à l'entrée d'un établissement dans le
+périmètre, et mode de calcul de la date anniversaire de maintenance.
+Toujours en conception, aucun code engagé.
+
+**P5-L1 — Point 8 révisé (19/09/2026), pas encore définitivement clos.**
+Principe modifié : « consultation élargie, modification restreinte » —
+le directeur peut désormais **consulter** les informations commerciales
+de son instance (durée, dates, statut, tarif, maintenance), mais ne peut
+rien modifier (réservé admin/responsable_securite, inchangé). Sous-point
+explicitement laissé ouvert par Phil : la portée exacte de cette
+consultation pour un directeur rattaché à un seul établissement, quand le
+contrat couvre plusieurs établissements — les champs globaux du contrat
+(tarifs unitaires, dates, statut) ne posent pas de problème (identiques
+pour tous), mais les agrégats sur l'ensemble du périmètre (nombre total
+d'établissements/bâtiments, montant mensuel total) révèlent la taille de
+l'organisation au-delà de son propre site. Deux options documentées dans
+`2026-09-19_P5-L1_Architecture_Technique_Contractualisation.md` §4.1,
+recommandation pour une vue scopée par établissement
+(`_get_etab_ids_autorises`) plutôt que l'agrégat global. Décision finale
+à confirmer par Phil.
+
+**P5-L1 — Point 8, deuxième révision (19/09/2026) : habilitation
+contractuelle, indépendante du `role`.** Constat de Phil : le droit de
+*gérer* le contrat commercial ne doit pas dépendre uniquement du `role`
+— un utilisateur (typiquement un directeur) peut être le
+souscripteur/gestionnaire réel du contrat. Proposition documentée
+(§4.2 du document d'architecture technique) : champ
+`ContratCommercial.gestionnaire_contractuel` (FK vers `Utilisateur`,
+assignable uniquement par admin/responsable_securite, pré-rempli au
+renouvellement depuis le contrat précédent, modifiable). Droits de
+gestion accordés soit par le rôle (admin/responsable_securite,
+toujours), soit par cette désignation explicite sur le contrat actif —
+vérifié par une fonction dédiée résolue contre l'objet, jamais contre le
+seul rôle (même discipline IDOR que le reste de PSM2S). Décision à
+confirmer par Phil avant développement.
+
+**P5-L1 — Point 8 tranché définitivement (19/09/2026).** Un seul
+`gestionnaire_contractuel` par `ContratCommercial` (pas de liste — DT
+tranché explicitement, simplicité et lisibilité juridique). Assignable
+uniquement par admin/responsable_securite. Renouvellement : gestionnaire
+précédent pré-rempli, validation explicite obligatoire, jamais de
+reconduction silencieuse. Chaque `ContratCommercial` historique garde sa
+propre référence (historique interprétable même si le gestionnaire
+change à chaque renouvellement). Nouveau point ajouté par Phil : si le
+gestionnaire désigné quitte ou est désactivé en cours de contrat, **le
+contrat reste valide, aucune révocation automatique** — un signal
+« Le contrat n'a plus de gestionnaire contractuel actif » s'affiche pour
+admin/responsable_securite, qui peuvent désigner un remplaçant à tout
+moment. Matrice finale de permissions et détail complet dans
+`2026-09-19_P5-L1_Architecture_Technique_Contractualisation.md`.
+
+**P5-L1 — Les 10 arbitrages fonctionnels sont considérés comme
+suffisamment définis (19/09/2026, Phil).** Étape suivante engagée :
+architecture technique détaillée de `ContratCommercial` et
+`MouvementPerimetre` (document ci-dessus), toujours en conception, aucun
+code engagé. Deux points techniques restent ouverts avant développement :
+mouvements de bâtiment explicites ou implicites, et mode de calcul de la
+date anniversaire de maintenance.
+
 **P5-L0 — Continuité, sécurité et pérennité du projet** : audit complet
 en lecture seule (17/09/2026), puis repassage de contrôle (19/09/2026,
 aucun changement constaté entre les deux), puis clôture actée le

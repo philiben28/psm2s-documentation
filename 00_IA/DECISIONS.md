@@ -1073,6 +1073,65 @@ révision du point 5). Toujours en conception, aucun code engagé.
 Prochaine étape annoncée par Phil : revue de l'architecture technique de
 `DemandeAvenant` avant d'autoriser le développement.
 
+**P5-L1 — Architecture validée (21/09/2026)**, points §5.1/§5.2 tranchés
+par Phil (mouvements de bâtiment explicites, date anniversaire dérivée
+de `date_debut`). Architecture fonctionnelle et technique considérées
+complètes.
+
+**P5-L1 — Plan de développement (21/09/2026)**, document
+`03_Développement/2026-09-21_P5-L1_Plan_Developpement.md` — aucun code,
+aucune migration. Fichiers du code actuel vérifiés un par un (pas
+supposés) : `registre/models.py`, `registre/permissions.py`,
+`registre/views.py`, `Templates/registre/dashboard.html`,
+`registre/tests.py`, dossier `registre/migrations/`. **Contradiction
+relevée** avec la documentation P5-L1 : la formule « jamais 403,
+toujours 404 » n'est vraie que pour les vérifications d'objet
+(`verifier_acces_etablissement`) — les décorateurs de rôle
+(`gestionnaire_requis` et famille) redirigent vers le dashboard, ils ne
+404 jamais. Impact : le futur `commercial_gestion_requis` doit suivre le
+patron redirection. Reste ouvert : le comportement de
+`verifier_acces_gestion_contrat` (redirection recommandée, pas encore
+tranché par Phil). Découpage proposé en 5 lots (A. modèles/migration,
+B. permissions, C. contrat commercial, D. workflow `DemandeAvenant`,
+E. tableau de bord/finitions), chacun testé avant le suivant. Deux
+points restent à trancher avant feu vert développement (voir le
+document, section finale).
+
+## Correctif de maintenance — rattachement du créateur à son nouvel établissement (21/09/2026)
+
+Indépendant de P5-L1 (commit Git séparé, aucun objet commercial touché).
+Découvert par Phil en testant en conditions réelles sur Formation, compte
+Directeur : après création d'un établissement, redirection vers sa fiche
+→ `Not Found`.
+
+**Diagnostic** : `nouveau_etablissement` créait l'établissement sans
+créer le rattachement `EtablissementUtilisateur` de son créateur. La
+redirection vers `detail_etablissement`, protégée par
+`get_etablissement_ou_404` (vérifie le périmètre via
+`_get_etab_ids_autorises`), renvoyait donc un 404 pour tout créateur
+n'ayant pas déjà `peut_tout_voir` — jamais repéré auparavant car les
+tests en conditions réelles avaient jusqu'ici toujours été faits avec un
+compte admin/responsable_securite.
+
+**Correctif** (`registre/views.py`, fonction `nouveau_etablissement`) :
+rattachement automatique du créateur comme établissement principal
+(`EtablissementUtilisateur`, même mécanisme que le rattachement existant
+ailleurs dans le code), dans la même transaction que la création,
+uniquement si l'utilisateur n'a pas déjà `peut_tout_voir` — comportement
+strictement inchangé pour admin/responsable_securite. Aucune règle de
+permission modifiée.
+
+**Tests** : 3 tests dédiés ajoutés (`NouveauEtablissementTests`) —
+directeur accède à son établissement après création avec le
+rattachement créé ; admin et responsable_securite sans rattachement
+créé, comportement inchangé. Suite complète rejouée : 195/195 verts.
+`manage.py check` sans problème.
+
+**Commit** `30c4eb4` (dépôt `psm2s-securite`), poussé, arbre propre.
+Déployé sur Formation pour les tests ; redémarrage Passenger nécessaire
+pour que le correctif soit effectif sur l'application en ligne, puis
+vérification finale en conditions réelles avec le compte Directeur.
+
 **P5-L0 — Continuité, sécurité et pérennité du projet** : audit complet
 en lecture seule (17/09/2026), puis repassage de contrôle (19/09/2026,
 aucun changement constaté entre les deux), puis clôture actée le
@@ -1208,6 +1267,461 @@ désormais exécutés et vérifiés :
   accessible et fonctionnel après vérification.
 
 **P5-L0 est déclaré formellement clos le 19/09/2026.**
+
+---
+
+## P5-L1 — Lot A : modèles de contractualisation, migration et tests (clos 21/09/2026)
+
+Développement du premier lot de P5-L1, strictement cadré par le GO du DT
+(21/09/2026) : uniquement les modèles, leurs contraintes d'intégrité, la
+migration et les tests associés — aucun développement de permissions
+(Lot B), de calcul commercial (Lot C), de workflow (Lot D) ni d'interface
+(Lot E).
+
+**Modèles créés** (`registre/models.py`) : `ContratCommercial` (contrat
+commercial historisé via `contrat_precedent`, statuts EN_ATTENTE/ACTIF/
+RESILIE/EXPIRE, `gestionnaire_contractuel`, `date_fin` calculée
+automatiquement), `DemandeAvenant` (workflow, 3 statuts uniquement —
+EN_ATTENTE/VALIDEE/REJETEE), `LigneDemandeAvenant` (lignes de demande,
+CASCADE), `MouvementPerimetre` (source unique de vérité du périmètre
+appliqué, jamais créé directement par une interface).
+
+**Trois écarts architecture/implémentation signalés au DT et tranchés
+avant commit** :
+- `MouvementPerimetre.ligne_demande_origine` : **`OneToOneField`**
+  conservé (et non `ForeignKey` comme initialement documenté) — la
+  contrainte d'unicité doit être portée par la base de données autant
+  que possible ; validé par le DT.
+- `full_clean()` appelé automatiquement dans `save()` des 4 modèles —
+  conservé, garantit que toute création (y compris via
+  `.objects.create()`) respecte les contraintes métier ; conséquence
+  assumée : `ValidationError` est le mode d'échec normal, pas
+  `IntegrityError` brute.
+- `date_anniversaire_maintenance` : reste une `@property` dérivée de
+  `date_debut`, aucun champ séparé en base — validé.
+- `statut_coherent` (signal d'écart statut/dates) : **retiré du Lot A**
+  sur décision explicite du DT, reporté à `registre/contractualisation.py`
+  au Lot C.
+
+**Tests** : 30 tests dédiés (`ContratCommercialModelTests`,
+`DemandeAvenantModelTests`, `LigneDemandeAvenantModelTests`,
+`MouvementPerimetreModelTests`), suite complète rejouée à 225/225 verts.
+`manage.py check` et `makemigrations --check --dry-run registre` sans
+anomalie.
+
+**Migration** `0024_contratcommercial_demandeavenant_lignedemandeavenant_and_more.py`
+générée sur Formation (SSH), rapatriée sur le poste local via FileZilla
+avant commit (point de vigilance identifié : une migration générée côté
+serveur n'existe pas automatiquement dans le dépôt local tant qu'elle
+n'est pas explicitement récupérée).
+
+**Commit** `9e0bf8c` (dépôt `psm2s-securite`), message
+« P5-L1-A : modèles contractualisation et migration », poussé, arbre
+propre. Exactement 3 fichiers modifiés : `registre/models.py`,
+`registre/tests.py`, et la migration `0024`.
+
+**Lot B (permissions) non entamé** : une revue DT du Lot A doit avoir
+lieu avant tout feu vert sur le Lot B, conformément à l'instruction
+explicite du DT.
+
+## P5-L1 — Lot B et Lot C0, clos (21/09/2026)
+
+Pour mémoire (détail complet dans les documents d'analyse/proposition
+technique de chaque lot, `Documentation/03_Développement/`) :
+
+- **Lot B — permissions de gestion commerciale**, commit `31a0fdf`
+  (dépôt `psm2s-securite`) : `commercial_gestion_requis`,
+  `gestion_contrat_autorisee`, `verifier_acces_gestion_contrat`
+  (patron **redirection**, jamais `Http404` — tranché explicitement,
+  contrairement à `verifier_acces_etablissement`),
+  `demandes_avenant_visibles`. Arbitrage associé : le pouvoir
+  contractuel d'un `gestionnaire_contractuel` n'est **pas borné** par
+  son périmètre opérationnel d'établissements. 20 tests dédiés,
+  245/245 avec la suite complète.
+- **Lot C0 — calcul commercial**, commit `06c1a4d` : nouveau module
+  `registre/contractualisation.py` limité à `perimetre_a_date`,
+  `tarif_mensuel`, `statut_coherent` (les fonctions secondaires —
+  maintenance, signaux de dépassement/gestionnaire absent —
+  explicitement exclues de ce lot). 20 tests dédiés, 265/265 avec la
+  suite complète. Aucun modèle, aucune vue.
+
+## P5-L1 — Lot C1 (consultation du contrat), arbitrages du 21/09/2026
+
+Suite à l'analyse d'architecture C1
+(`2026-09-21_P5-L1_Lot_C1_Analyse_Architecture.md`), le DT tranche
+deux points propres à l'interface de consultation :
+
+- **Visibilité du signal `statut_coherent` pour le gestionnaire
+  contractuel** : le `gestionnaire_contractuel` désigné voit le signal
+  sur **son** contrat, au même titre que admin/responsable_securite —
+  la restriction littérale de l'architecture technique (§3.4, « réservé
+  à l'affichage admin/responsable_securite ») aurait contredit le
+  principe déjà validé d'un accès commercial intégral pour le
+  gestionnaire désigné (architecture §4.2). **Distinction maintenue
+  explicitement** : voir le signal ≠ correction automatique (toujours
+  interdite) ≠ droit de modifier le contrat (reste régi par les droits
+  déjà définis, Lot B). Le signal est un indicateur de cohérence, pas
+  une autorisation supplémentaire — ne change aucune permission
+  existante.
+- **`contrat_historique` en l'absence de tout `ContratCommercial`** :
+  redirection vers `commercial_accueil`, plutôt qu'un écran
+  d'historique vide — cohérent avec le principe déjà retenu d'un état
+  d'interface explicite pour l'absence de contrat actif.
+- **Lien « créer le premier contrat »** : confirmé hors périmètre de
+  C1 — n'apparaît pas tant que C2 (`renouvellement_form`) n'est pas
+  développé, pour ne jamais référencer une URL inexistante.
+
+Étape suivante : proposition technique C1 (vues, URLs, requêtes,
+templates, tests), toujours sans code.
+
+## P5-L1 — Lot C2 (renouvellement / activation), arbitrages du 24/09/2026
+
+Suite à l'analyse d'architecture C2
+(`2026-09-21_P5-L1_Lot_C2_Analyse_Architecture.md`), le DT tranche les
+sept points signalés :
+
+- **Résiliation** : traitée dans C2 (`resiliation_form`), conformément
+  au périmètre initial du sous-lot dans la proposition technique Lot C.
+- **Reprise du périmètre au renouvellement** : reprise automatique du
+  périmètre du contrat précédent, en **pré-remplissage modifiable**
+  avant validation — jamais une application automatique. L'ancien
+  contrat n'est jamais modifié. Si l'utilisateur modifie le périmètre
+  proposé, cela passe par le mécanisme `DemandeAvenant` déjà prévu par
+  P5-L1 (pas de nouveau mécanisme de saisie de périmètre).
+- **Tarifs** : pré-remplis depuis le contrat précédent
+  (`tarif_etablissement_mensuel`, `tarif_batiment_mensuel`,
+  `maintenance_montant_annuel`), modifiables avant validation.
+- **Dates** : le nouveau contrat ne peut pas devenir `ACTIF` avant la
+  fin de l'ancien (`activer_contrat` refuse toute activation prématurée
+  — transition contrôlée, jamais automatique).
+- **Activation** : Option A confirmée — un seul geste explicite déclenche,
+  dans une même transaction, la double transition (ancien `ACTIF` →
+  `EXPIRE`, nouveau `EN_ATTENTE` → `ACTIF`).
+- **Contrat dans un mauvais statut** : `activer_contrat` refuse
+  proprement (message explicite) toute tentative sur un contrat qui
+  n'est plus `EN_ATTENTE` — aucun changement silencieux.
+- **Concurrence** : pas de mécanisme sophistiqué à ce stade compte tenu
+  du faible volume d'opérations, mais `select_for_update()` est exigé
+  lors de l'activation pour verrouiller les lignes concernées le temps
+  de la transaction — la seule protection retenue au-delà de l'ordre
+  des écritures déjà identifié dans l'analyse.
+
+Aucune contrainte SQL supplémentaire (`UniqueConstraint`, index
+partiel) n'est introduite par C2 — resterait, si souhaitée un jour, une
+proposition séparée, distincte de ce lot.
+
+### Arbitrages complémentaires du 24/09/2026 (suite à la proposition technique C2)
+
+Quatre points laissés ouverts par la proposition technique
+(`2026-09-21_P5-L1_Lot_C2_Proposition_Technique.md`, §10) sont
+tranchés :
+
+1. **Auto-validation de la `DemandeAvenant` de reprise du périmètre** :
+   confirmée dans tous les cas, y compris si le périmètre proposé est
+   modifié avant validation — préparée par le renouvellement, validée
+   dans le même geste. Aucune demande n'est laissée `EN_ATTENTE` pour
+   un futur écran C4.
+2. **`date_debut` des nouveaux contrats** : obligatoirement le 1er du
+   mois. Règle métier applicative (`clean()`), pas une contrainte SQL —
+   cohérente avec la règle déjà en place sur les dates d'effet de
+   périmètre (`MouvementPerimetre`/`DemandeAvenant`).
+3. **`resiliation_form`** : utilisable uniquement sur un
+   `ContratCommercial` `ACTIF`. Tout autre statut (`EN_ATTENTE`,
+   `EXPIRE`, `RESILIE`) est refusé proprement par la vue, même si
+   l'URL accepte techniquement n'importe quel `pk`.
+4. **Tests de concurrence** : vérification de la présence et de
+   l'utilisation de `select_for_update()` dans la transaction
+   d'activation, pas de test multithread réel — cohérent avec la
+   stratégie de test déjà en place dans PSM2S (`TestCase`
+   uniquement).
+
+**Séquence complète du renouvellement, documentée explicitement** :
+
+```
+Ancien contrat ACTIF
+  → lancement du renouvellement (formulaire, rien n'est encore écrit)
+  → nouveau contrat préparé en EN_ATTENTE
+  → reprise du périmètre proposée (pré-remplissage, affichage seul)
+  → éventuelles modifications du périmètre par l'utilisateur
+  → validation de la DemandeAvenant (même geste que la soumission du
+    formulaire de renouvellement — pas une étape séparée dans le temps)
+  → [étape distincte, ultérieure] confirmation explicite du renouvellement
+    via activer_contrat
+  → transaction atomique (select_for_update sur l'ancien ACTIF et sur
+    le nouveau contrat)
+  → ancien contrat EXPIRE
+  → nouveau contrat ACTIF
+```
+
+Rollback complet à toute étape de la transaction d'activation qui
+échoue : l'ancien contrat reste `ACTIF`, le nouveau reste `EN_ATTENTE`
+— jamais d'état intermédiaire persistant. La préparation du contrat et
+du périmètre (jusqu'à et y compris la validation de la
+`DemandeAvenant`) est une transaction distincte de la transaction
+d'activation elle-même — seule cette dernière porte sur la bascule
+`ACTIF`/`EXPIRE` proprement dite.
+
+GO développement C2, conformément à la proposition technique validée.
+
+## P5-L1 — Lot C3 (soumission et liste des demandes d'avenant), arbitrages du 24/09/2026
+
+Suite à l'analyse d'architecture et à la proposition technique C3
+(`2026-09-24_P5-L1_Lot_C3_Analyse_Architecture.md`,
+`2026-09-24_P5-L1_Lot_C3_Proposition_Technique.md`), le DT tranche :
+
+1. **Point d'entrée de la soumission** : formulaire autonome
+   (`demande_avenant_form`), atteignable depuis le module commercial.
+   `nouveau_etablissement`/`nouveau_batiment` (Phase 4) restent
+   strictement inchangés — aucune contractualisation greffée sur ces
+   vues opérationnelles.
+2. **Montants dans la prévisualisation** : visibles uniquement pour
+   admin/responsable_securite/gestionnaire_contractuel du contrat
+   concerné (`gestion_contrat_autorisee`, Lot B, réutilisée telle
+   quelle) — jamais pour un directeur non gestionnaire ni pour aucun
+   autre rôle. Cohérent avec la restriction déjà en place au Lot C1
+   pour les agrégats du contrat.
+3. **Établissements sélectionnables par un directeur** : strictement
+   limités à son périmètre autorisé (`etablissements_autorises`,
+   primitive IDOR pré-existante). Contrôlé **côté serveur**, à la
+   soumission, indépendamment du filtrage de la liste affichée — un
+   POST forgé hors périmètre est refusé.
+4. **Doublons de `DemandeAvenant` `EN_ATTENTE`** : recouvrement
+   établissement par établissement (et bâtiment par bâtiment) — toute
+   demande `EN_ATTENTE` déjà rattachée à un établissement/bâtiment
+   donné, sur le même contrat, bloque une nouvelle demande portant sur
+   ce même objet, même si les deux périmètres complets diffèrent.
+   Purement applicatif, aucune contrainte SQL. Après `REJETEE` ou
+   `VALIDEE`, l'objet n'est plus bloqué : une nouvelle demande est
+   acceptée sans condition particulière.
+5. **Capture de l'état demandé** : pas de snapshot des montants dans
+   `DemandeAvenant` — seul le périmètre demandé (les
+   `LigneDemandeAvenant`, déjà immuables une fois créées) est la
+   donnée figée. Les montants affichés en consultation sont recalculés
+   à la demande, à partir de l'état contractuel réel, jamais stockés.
+   Aucune modification de modèle, aucune migration pour ce lot.
+6. **Demande devenue orpheline après un renouvellement (Lot C2)** :
+   une `DemandeAvenant` `EN_ATTENTE` reste liée à son
+   `ContratCommercial` d'origine, même si celui-ci devient `EXPIRE`.
+   **Aucun transfert automatique** vers le nouveau contrat — cohérent
+   avec le principe général de non-modification silencieuse de
+   l'historique. Une nouvelle demande doit être soumise séparément
+   pour le nouveau contrat si le besoin persiste.
+7. **Validation d'une demande sur un contrat non `ACTIF`** : différée
+   à C4. C3 ne développe aucune logique de blocage à la validation —
+   se limite à afficher, en consultation, un motif explicite quand
+   `demande.contrat_commercial.statut != 'ACTIF'` pour une demande
+   `EN_ATTENTE`, sans modifier `demande.statut`. C3 doit laisser
+   l'état des données cohérent pour que C4 applique cette règle.
+8. **Découpage C3/C4 confirmé** : C3 = soumission (en deux temps,
+   sélection puis confirmation explicite après prévisualisation) +
+   liste/consultation (lecture seule, aucune action d'écriture sur une
+   demande existante). C4 = validation, rejet, génération du
+   `MouvementPerimetre`.
+
+GO développement C3, conformément à la proposition technique validée.
+
+## P5-L1 — Lot C4 (validation/rejet des demandes d'avenant), arbitrages du 24/09/2026
+
+Suite à l'analyse d'architecture C4
+(`2026-09-24_P5-L1_Lot_C4_Analyse_Architecture.md`), le DT tranche les
+six points signalés :
+
+1. **Décorateur des vues de validation/rejet** : réutilise le patron
+   déjà en place pour `resiliation_form` (Lot C2) — `@gestionnaire_requis`
+   (large, inclut `directeur`) en première garde, puis
+   `verifier_acces_gestion_contrat(request.user, contrat)` en second
+   (refus par redirection). Le gestionnaire contractuel désigné sur un
+   contrat doit pouvoir traiter les demandes de **ce** contrat, y
+   compris s'il est directeur — cohérent avec `resiliation_form`, à la
+   différence du patron plus restrictif de
+   `renouvellement_form`/`activer_contrat` (`@commercial_gestion_requis`,
+   qui exclut même le directeur gestionnaire).
+2. **Validation d'une demande dont le contrat n'est plus `ACTIF`**
+   (renouvelé ou résilié entre-temps) : **refus propre, sans aucune
+   écriture. Aucun rejet automatique.** La demande reste `EN_ATTENTE`,
+   mais est signalée comme non validable (comportement déjà affiché en
+   lecture seule depuis C3, jamais modifié). Distinction explicitement
+   voulue par le DT : `REJETEE` signifie qu'une personne a pris la
+   décision de rejeter ; `EN_ATTENTE` mais non validable signifie que la
+   demande existe toujours mais que son contexte contractuel ne permet
+   plus son application — un système ne doit jamais transformer
+   silencieusement l'un en l'autre. Important pour la fidélité de
+   l'historique.
+3. **Motif de rejet** : rendu **obligatoire** (contrainte de formulaire,
+   pas de contrainte de modèle — `commentaire_validation` reste
+   `blank=True` en base). Un rejet est une décision métier ; sa
+   justification doit être tracée systématiquement.
+4. **`date_effet_souhaitee` déjà passée à la validation** :
+   **avertissement, pas de blocage**. La vue affiche clairement que la
+   date souhaitée est dépassée et demande une confirmation explicite
+   avant de poursuivre — une validation tardive peut être parfaitement
+   légitime, elle ne doit pas être empêchée mécaniquement.
+5. **Verrouillage transactionnel** : verrouille **à la fois** la
+   `DemandeAvenant` et le `ContratCommercial` concerné
+   (`select_for_update()` sur les deux), avec **revérification de leur
+   état après verrouillage, avant toute écriture** — même logique que
+   la double vérification déjà en place dans `activer_contrat` (Lot C2).
+   Le verrou sur la demande empêche une double validation concurrente ;
+   le verrou sur le contrat garantit qu'on ne valide jamais contre un
+   état contractuel devenu différent entre la lecture initiale et
+   l'écriture.
+6. **IDOR — demande appartenant à un contrat non géré par
+   l'utilisateur** : refus par **redirection**, jamais `Http404` —
+   même patron que `resiliation_form`/`activer_contrat` (l'utilisateur
+   est autorisé à utiliser la fonctionnalité en général, il n'a
+   simplement pas accès à ce contrat précis ; pas de nécessité de
+   dissimuler l'existence de l'objet).
+
+GO pour la proposition technique C4, sur la base de ces six arbitrages.
+
+### Arbitrages complémentaires du 24/09/2026 (suite à la proposition technique C4)
+
+Deux points, apparus en détaillant l'implémentation dans la proposition
+technique (`2026-09-24_P5-L1_Lot_C4_Proposition_Technique.md`), sont
+tranchés :
+
+1. **Rejet d'une demande dont le contrat n'est plus `ACTIF`** : reste
+   possible, sans restriction. Distinction retenue explicitement : la
+   validation produit un effet sur le périmètre (`MouvementPerimetre`),
+   donc exige un contrat `ACTIF` ; le rejet ne modifie ni le contrat ni
+   le périmètre, il ne fait qu'acter une décision administrative de
+   clôture — rien ne justifie de l'interdire. Permet notamment de
+   rejeter explicitement, avec motif (« Demande devenue obsolète suite
+   au renouvellement du contrat »), une demande restée liée à un
+   contrat devenu `EXPIRE`/`RESILIE`, plutôt que de la laisser
+   indéfiniment `EN_ATTENTE`.
+2. **Verrouillage transactionnel du rejet** : `DemandeAvenant` seule
+   (`select_for_update()`), jamais `ContratCommercial` — contrairement à
+   la validation, qui verrouille les deux (arbitrage n°5 ci-dessus). Le
+   rejet ne lit ni n'écrit jamais l'état du contrat ; verrouiller le
+   contrat n'apporterait aucune garantie supplémentaire et élargirait
+   inutilement la portée de la transaction.
+
+**Tableau récapitulatif final** :
+
+| Action | Contrat `ACTIF` requis | Verrouillage |
+|---|---|---|
+| Valider | Oui | `DemandeAvenant` + `ContratCommercial` |
+| Rejeter | Non | `DemandeAvenant` uniquement |
+
+Tous les points de la proposition technique C4 sont désormais tranchés.
+
+## P5-L1 — Lot C3, clos (24/09/2026)
+
+Soumission (en deux temps, sélection puis confirmation après
+prévisualisation) et liste/consultation des `DemandeAvenant`, strictement
+conforme aux 8 arbitrages du 24/09/2026 ci-dessus. Aucune action
+d'écriture sur une demande existante — validation/rejet reportés à C4.
+
+**Fichiers** : `registre/urls.py`, `registre/views.py`
+(`demande_avenant_form`, `demande_avenant_liste`), `registre/tests.py`
+(28 tests dédiés — chiffre corrigé le 24/09/2026 suite au bilan complet
+P5-L1, qui a recompté précisément : `DemandeAvenantSansContratActifTests`
+2 + `DemandeAvenantFormTests` 10 + `DemandeAvenantPermissionsTests` 7 +
+`DemandeAvenantDoublonsTests` 3 + `DemandeAvenantListeTests` 6),
+`Templates/registre/commercial/demande_avenant_form.html`
+et `demande_avenant_liste.html` (nouveaux), liens ajoutés dans
+`accueil.html`/`contrat_detail.html`. Aucun modèle ni migration modifié.
+
+**Tests** : 338/338 verts (1 skip SQLite connu). `manage.py check` et
+`makemigrations --check --dry-run` sans anomalie.
+
+**Commit** `38d0b27` (dépôt `psm2s-securite`), message
+« P5-L1-C3 : soumission et liste des demandes d'avenant », poussé, arbre
+propre.
+
+## P5-L1 — Lot C4, clos (24/09/2026)
+
+Validation et rejet des `DemandeAvenant`, génération des
+`MouvementPerimetre`, strictement conforme aux 8 arbitrages du
+24/09/2026 ci-dessus (6 initiaux + 2 complémentaires suite à la
+proposition technique).
+
+**Comportement** : validation dans une transaction verrouillant
+`DemandeAvenant` + `ContratCommercial` (re-vérification des deux états
+après verrouillage), refus propre sans écriture si le contrat n'est plus
+`ACTIF`, création d'un `MouvementPerimetre` par ligne. Rejet dans une
+transaction verrouillant uniquement `DemandeAvenant`, motif obligatoire,
+reste possible même si le contrat n'est plus `ACTIF`. IDOR : refus par
+redirection (`verifier_acces_gestion_contrat`), cohérent avec
+`resiliation_form`.
+
+**Fichiers** : `registre/forms.py` (`DemandeAvenantRejetForm`),
+`registre/views.py` (`demande_avenant_valider`, `demande_avenant_rejeter`),
+`registre/urls.py` (2 routes), `registre/tests.py` (26 tests dédiés),
+`Templates/registre/commercial/demande_avenant_valider.html` et
+`demande_avenant_rejeter.html` (nouveaux), `demande_avenant_liste.html`
+(liens Valider/Rejeter conditionnels). Aucun modèle ni migration
+modifié.
+
+**Tests** : 364/364 verts (3 skips SQLite `select_for_update`, connus et
+justifiés) — dont `test_rollback_complet_si_echec_en_cours_de_transaction`,
+qui vérifie qu'un échec en cours de transaction laisse la demande et le
+périmètre dans leur état antérieur (garantie centrale du lot).
+`manage.py check` et `makemigrations --check --dry-run` sans anomalie.
+
+**Commit** `b755ad1` (dépôt `psm2s-securite`), message
+« P5-L1-C4 : validation et rejet des demandes d'avenant », poussé, arbre
+propre.
+
+Workflow complet des avenants P5-L1 fonctionnel de bout en bout :
+demande → prévisualisation → EN_ATTENTE → validation/rejet →
+MouvementPerimetre → nouveau périmètre.
+
+## P5-L1 — Bilan complet et arbitrages de clôture (24/09/2026)
+
+Suite au document d'audit `2026-09-24_P5-L1_Bilan_Complet.md` (lecture
+seule, aucun code modifié pour le produire), le DT tranche les quatre
+points signalés :
+
+1. **Signal « gestionnaire contractuel actif » : abandonné pour P5-L1,
+   explicitement.** Prévu dans l'architecture technique du 19/09/2026
+   (§4.2/§4.3) mais jamais repris dans la proposition technique du Lot
+   C1 ni développé depuis. Décision du DT : ne pas le développer — le
+   besoin fonctionnel principal (identifier et habiliter le gestionnaire
+   contractuel) est déjà couvert par le champ
+   `ContratCommercial.gestionnaire_contractuel` et par
+   `gestion_contrat_autorisee` (qui vérifie déjà `is_active` avant
+   d'accorder un droit, donc aucune brèche de sécurité liée à son
+   absence). **Ce point est formellement classé abandonné/hors périmètre
+   de P5-L1** — à ne pas confondre avec un oubli restant à développer.
+   Aucune réouverture du Lot C1 pour ce motif.
+
+2. **Concurrence à la soumission d'une `DemandeAvenant` (contrôle
+   anti-doublon sans verrouillage, `demande_avenant_form`) : dette
+   technique acceptée.** Risque théorique réel (deux soumissions
+   quasi-simultanées sur le même établissement pourraient toutes deux
+   passer le contrôle avant qu'aucune n'ait écrit), mais rapport
+   bénéfice/complexité jugé défavorable à un renforcement maintenant :
+   application mono-tenant, très peu d'utilisateurs habilités, faible
+   fréquence de modification du périmètre, moteur SQLite actuel (sur
+   lequel `select_for_update()` est de toute façon un no-op — cf. Lot
+   C2). Aucun développement supplémentaire. **Condition de réouverture** :
+   passage à un moteur de base de données supportant réellement le
+   verrouillage concurrent (PostgreSQL/MySQL) et/ou augmentation
+   significative du nombre d'utilisateurs habilités à soumettre des
+   demandes.
+
+3. **Concurrence au renouvellement (lecture non verrouillée du contrat
+   `ACTIF` avant transaction, `renouvellement_form`) : même décision,
+   dette technique acceptée.** Le mécanisme `transaction.atomic()` +
+   `select_for_update()` déjà en place (`activer_contrat`) reste la bonne
+   architecture pour une base supportant réellement le verrouillage ;
+   pas de développement supplémentaire tant que l'application reste sur
+   SQLite. **Même condition de réouverture** que le point 2, à traiter
+   ensemble lors d'une éventuelle migration SQLite → PostgreSQL/MySQL.
+
+4. **Nombre de tests C3 dans `DECISIONS.md` : corrigé.** L'entrée de
+   clôture du Lot C3 annonçait 30 tests dédiés ; le bilan a recompté
+   précisément 28 (détail dans l'entrée de clôture C3 ci-dessus, mise à
+   jour). Correction purement documentaire, aucun impact fonctionnel.
+
+**P5-L1 est déclaré clôturé (24/09/2026)**, avec ses deux dettes
+techniques explicitement assumées et documentées (points 2 et 3
+ci-dessus) plutôt que silencieuses, et le signal du point 1 formellement
+classé hors périmètre. Aucun développement supplémentaire engagé sur
+P5-L1 par cette entrée. P5-L2 non ouvert — nécessitera un GO explicite
+distinct.
 
 ---
 

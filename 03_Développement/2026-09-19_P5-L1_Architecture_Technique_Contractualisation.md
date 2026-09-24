@@ -423,7 +423,12 @@ un écart chiffré.
 
 ---
 
-## 5. Points techniques encore ouverts
+## 5. Points techniques — tranchés le 21/09/2026
+
+Les deux points ci-dessous, ainsi que l'ensemble de l'architecture
+fonctionnelle et technique de ce document, sont validés par Phil le
+21/09/2026. L'architecture P5-L1 est considérée complète. Prochaine
+étape : plan de développement (document séparé), toujours sans code.
 
 ### 5.1 Mouvements de bâtiment explicites ou implicites
 
